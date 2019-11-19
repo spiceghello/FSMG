@@ -114,7 +114,7 @@ Defined.
 
 (***)
 
-Lemma epsilon_homotopy_alpha (a b c : FMG X)
+Lemma eta_homotopy_alpha (a b c : FMG X)
   (a' : a = J_fun (K_fun a)) (b' : b = J_fun (K_fun b)) (c' : c = J_fun (K_fun c))
   : (mm (mm a' b' @ J_2 (K_fun a) (K_fun b)) c' @ J_2 (K_fun (m a b)) (K_fun c))
     @ ap (J_fun o K_fun) (alpha a b c)
@@ -129,7 +129,7 @@ Proof.
   exact (alpha_FMG_natural a' b' c')^.
 Defined.
 
-Lemma epsilon_homotopy_lambda (b : FMG X) (b' : b = J_fun (K_fun b))
+Lemma eta_homotopy_lambda (b : FMG X) (b' : b = J_fun (K_fun b))
   : (mm 1 b' @ J_2 (K_fun e) (K_fun b)) @ ap (fun w : FMG X => J_fun (K_fun w)) (lambda b)
     = ap idmap (lambda b) @ b'.
 Proof.
@@ -138,7 +138,7 @@ Proof.
   exact (lambda_FMG_natural b')^.
 Defined.
 
-Lemma epsilon_homotopy_rho (a : FMG X) (a' : a = J_fun (K_fun a))
+Lemma eta_homotopy_rho (a : FMG X) (a' : a = J_fun (K_fun a))
   : (mm a' 1 @ J_2 (K_fun a) (K_fun e)) @ ap (fun w : FMG X => J_fun (K_fun w)) (rho a)
     = ap idmap (rho a) @ a'.
 Proof.
@@ -148,7 +148,7 @@ Proof.
   exact (rho_FMG_natural a')^.
 Defined.
 
-Lemma epsilon_homotopy (* unit of the adjunction *)
+Lemma eta_homotopy (* unit of the adjunction *)
   : (fun a : FMG X => a) == J o K.
 Proof.
   srapply FMG_ind_to_paths_in_gpd; simpl.
@@ -158,18 +158,18 @@ Proof.
     change (m a b = J_fun (app (K_fun a) (K_fun b))).
     refine (mm IHa IHb @ _).
     apply J_2.
-  + exact epsilon_homotopy_alpha. (* this case uses J_alpha, which uses pentagon and alpha_lambda, which uses both pentagon and triangle *)
-  + exact epsilon_homotopy_lambda. (* this case is simpler and does not use coherence diagrams (J_lambda does not) *)
-  + exact epsilon_homotopy_rho. (* this case uses J_rho, which uses both coherence diagrams (because of rho_alpha and lambda_rho_e) *)
+  + exact eta_homotopy_alpha. (* this case uses J_alpha, which uses pentagon and alpha_lambda, which uses both pentagon and triangle *)
+  + exact eta_homotopy_lambda. (* this case is simpler and does not use coherence diagrams (J_lambda does not) *)
+  + exact eta_homotopy_rho. (* this case uses J_rho, which uses both coherence diagrams (because of rho_alpha and lambda_rho_e) *)
 Defined.
 
 (** Check that this is a monoidal natural isomorphism **)
 
-Definition epsilon
+Definition eta
   : MonoidalNatIso (MonoidalFunctor_id _) (MonoidalFunctor_comp J K).
 Proof.
   srapply @Build_MonoidalNatIso.
-  + exact epsilon_homotopy.
+  + exact eta_homotopy.
   + constructor.
   + intros; unfold mg_f2; simpl.
     exact (concat_1p _ @ whiskerL _ (concat_p1 _)^).
@@ -181,7 +181,7 @@ Theorem FMG_coherence
   : forall {a b : FMG X} (p q : a = b), p = q.
 Proof.
   intros.
-  refine ((moveR_pV _ _ _ (concat_pA1 epsilon_homotopy p))^ @ _ @ moveR_pV _ _ _ (concat_pA1 epsilon_homotopy q)).
+  refine ((moveR_pV _ _ _ (concat_pA1 eta_homotopy p))^ @ _ @ moveR_pV _ _ _ (concat_pA1 eta_homotopy q)).
   apply whiskerR; apply whiskerL.
   refine (ap_compose K J p @ _ @ (ap_compose K J q)^).
   apply ap.
@@ -203,17 +203,17 @@ Proof.
   induction p; constructor.
 Defined.
 
-Fixpoint eta_homotopy (l : list X)
+Fixpoint epsilon_homotopy (l : list X)
   : K (J l) = l
   := match l with
     | nil => idpath
-    | x :: l => ap (cons x) (eta_homotopy l) end.
+    | x :: l => ap (cons x) (epsilon_homotopy l) end.
 
-Definition eta
+Definition epsilon
   : MonoidalNatIso (MonoidalFunctor_comp K J) (MonoidalFunctor_id _).
 Proof.
   srapply @Build_MonoidalNatIso.
-  + exact eta_homotopy.
+  + exact epsilon_homotopy.
   + constructor.
   + intros l1 l2; unfold mg_f2; simpl.
     refine (whiskerR (concat_1p _) _ @ _ @ (concat_p1 _)^).
@@ -228,7 +228,7 @@ Defined.
 
 Proposition equiv_FMG_list : FMG X <~> list X.
 Proof.
-  srefine (equiv_adjointify K J eta_homotopy (fun x => (epsilon_homotopy x)^)).
+  srefine (equiv_adjointify K J epsilon_homotopy (fun x => (eta_homotopy x)^)).
 Defined.
 
 
