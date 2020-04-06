@@ -1,4 +1,6 @@
-Require Export path_algebra_lemmas.
+Require Export hott_lemmas.
+
+Open Scope type.
 
 Section MonoidalGroupoids.
 

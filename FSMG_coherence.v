@@ -7,7 +7,7 @@ Context (X : Type) {T_X : IsHSet X}.
 
 Definition K_fun
   : FSMG X -> slist X
-  := FSMG_rec X (slist X) nil (fun x => x :: nil) sapp alpha_slist lambda_slist rho_slist tau_slist  pentagon_slist triangle_slist hexagon_slist bigon_slist _.
+  := FSMG_rec X (slist X) nil (fun x => x :: nil) sapp alpha_slist lambda_slist rho_slist tau_slist  pentagon_slist triangle_slist hexagon_slist bigon_slist T_slist.
 
 Definition K_fun_beta_alpha (a b c : FSMG X)
   : ap K_fun (alpha a b c) = alpha_slist (K_fun a) (K_fun b) (K_fun c)
@@ -114,7 +114,8 @@ Proof.
   + exact J_fun_swap.
   + exact J_fun_double.
   + exact J_fun_triple.
-Defined. 
+  + exact T_FSMG.
+Defined.
 
 Lemma ap_J_ap_cons {l l' : slist X} (x : X)
   (p : l = l')
@@ -164,6 +165,7 @@ Defined.
       change (m (m (iota x) (J_fun l1)) (J_fun l2) = m (iota x) (J_fun (l1 ++ l2))).
       exact (alpha _ _ _ @ mm 1 h).
     + hnf. apply J_2_swap.
+    + exact T_FSMG.
   Defined.
 
   Definition J_alpha
@@ -172,6 +174,7 @@ Defined.
       = (mm (J_2 l1 l2) 1 @ J_2 (l1 ++ l2) l3) @ ap J_fun (alpha_slist l1 l2 l3).
   Proof.
     intros l1 l2 l3; revert l1; srapply @slist_ind_to_2paths_in_gpd; hnf.
+    + exact T_FSMG.
     + simpl.
       change (alpha (J_fun nil) (J_fun l2) (J_fun l3) @ (ap011 m 1 (J_2 l2 l3) @ lambda (J_fun (l2 ++ l3))) = (mm (lambda (J_fun l2)) 1 @ J_2 l2 l3) @ 1).
       refine (_ @ (concat_p1 _)^).
@@ -204,6 +207,7 @@ Defined.
     rho (J_fun l) = (ap011 m 1 1 @ J_2 l nil) @ ap J_fun (rho_slist l).
   Proof.
     srapply @slist_ind_to_2paths_in_gpd; hnf.
+    + exact T_FSMG.
     + simpl. refine (_ @ (concat_1p _)^ @ (concat_p1 _)^).
       change (rho (J_fun nil) = lambda (J_fun nil)).
       exact (lambda_rho_FSMG_e)^.
@@ -221,6 +225,7 @@ Defined.
       @ ap011 m 1 (J_2 l2 l1) @ ap J_fun (sapp_Q x l1 l2).
   Proof.
     srapply @slist_ind_to_2paths_in_gpd; hnf.
+    + exact T_FSMG.
     + simpl. refine (_ @ (concat_p1 _)^).
       change (alpha (J_fun nil) (iota x) (J_fun l1) @ lambda (m (iota x) (J_fun l1)) = (ap011 m (tau (J_fun nil) (iota x)) 1 @ alpha (iota x) (J_fun nil) (J_fun l1)) @ ap011 m 1 (lambda (J_fun l1))).
       refine (alpha_lambda_FSMG _ _ @ _).
@@ -266,7 +271,9 @@ Defined.
       tau (J_fun l1) (J_fun l2) @ J_2 l2 l1 = J_2 l1 l2 @ ap J_fun (tau_slist l1 l2).
   Proof.
     srapply @slist_ind_to_fam_2paths_in_gpd; hnf.
+    + exact T_FSMG.
     + srapply @slist_ind_to_2paths_in_gpd; hnf.
+      - exact T_FSMG.
       - simpl. refine (_ @ (concat_p1 _)^).
         change (tau (J_fun nil) (J_fun nil) @ lambda (J_fun nil) = lambda (J_fun nil)).
         refine (tau_lambda_rho_FSMG e @ _).
@@ -295,22 +302,11 @@ lambda (J_fun (y :: l2)) @ ap J_fun (ap (cons y) (tau_slist nil l2))).
       refine (_ @ whiskerR (whiskerR ((concat_p1 _)^ @ whiskerL _ (ap011 mm (idpath idpath) (bigon _ _)^ @ (ap011_pqpq m 1 1 _ _)^) @ concat_p_pp _ _ _) _) _);
       repeat rewrite concat_p_pp.
       apply J_tau_V.
-    Qed.        
+    Qed.
 
 Definition J
-  : SymMonoidalFunctor (slistSMG X) (FSMG_SMG X).
-Proof.
-  srapply @Build_SymMonoidalFunctor;
-  unfold smg_mm, smg_m; simpl.
-  + exact J_fun.
-  + constructor.
-  + exact J_2.
-  + exact J_alpha. 
-  + exact J_lambda.
-  + exact J_rho.
-  + exact J_tau.
-Defined.
-
+  : SymMonoidalFunctor (slistSMG X) (FSMG_SMG X)
+  := @Build_SymMonoidalFunctor (slistSMG X) (FSMG_SMG X) J_fun idpath J_2 J_alpha J_lambda J_rho J_tau.
 
 Lemma epsilon_homotopy_alpha (a b c : FSMG X)
   (a' : a = J_fun (K_fun a)) (b' : b = J_fun (K_fun b)) (c' : c = J_fun (K_fun c))
@@ -371,6 +367,7 @@ Proof.
   + exact epsilon_homotopy_lambda.
   + exact epsilon_homotopy_rho.
   + exact epsilon_homotopy_tau. (* uses J_tau, which uses all coherence diagrams! *)
+  + exact T_FSMG.
 Defined.
 
 Definition epsilon
@@ -380,6 +377,7 @@ Proof.
   + exact epsilon_homotopy.
   + constructor.
   + intros; unfold smg_f2; simpl.
+    change (idpath @ (mm (epsilon_homotopy a) (epsilon_homotopy b) @ J_2 (K_fun a) (K_fun b)) = mm (epsilon_homotopy a) (epsilon_homotopy b) @ (J_2 (K_fun a) (K_fun b) @ 1)).
     exact (concat_1p _ @ whiskerL _ (concat_p1 _)^).
 Defined.
 
@@ -428,7 +426,22 @@ Proof.
     change (x :: K (J l) = x :: l).
     exact (ap (cons x) h).
   + hnf. apply eta_homotopy_swap.
+  + srapply T_slist.
 Defined.
+
+  Lemma eta_cons (l2 : slistSMG X)
+    : forall (x : X) (l : slist X),
+    ap K_fun (J_2 l l2) @ eta_homotopy (l ++ l2) = ap011 sapp (eta_homotopy l) (eta_homotopy l2) ->
+    ap K_fun (J_2 (x :: l) l2) @ eta_homotopy ((x :: l) ++ l2) = ap011 sapp (eta_homotopy (x :: l)) (eta_homotopy l2).
+  Proof.
+    intros x l1 h.
+    refine (whiskerR (ap_pp K_fun (alpha (iota x) (J_fun l1) (J_fun l2)) (mm 1 (J_2 l1 l2))) _ @ _).
+    refine (whiskerR (@concat2 _ _ _ _ (ap K_fun (alpha (iota x) (J_fun l1) (J_fun l2))) _ (ap K_fun (mm 1 (J_2 l1 l2))) (ap (cons x) (ap K (J_2 l1 l2))) (K_fun_beta_alpha _ _ _) (ap_cons_ap_K x (J_2 l1 l2)) @ concat_1p _) _ @ _).
+    change (ap (cons x) (ap K (J_2 l1 l2)) @ ap (cons x) (eta_homotopy (l1 ++ l2)) = ap011 sapp (ap (cons x) (eta_homotopy l1)) (eta_homotopy l2)).
+    refine ((ap_pp (cons x) _ _)^ @ _ @ (ap011_sapp_ap_cons x _ _)^).
+    change (ap (cons x) (ap K_fun (J_2 l1 l2) @ eta_homotopy (l1 ++ l2)) = ap (cons x) (ap011 sapp (eta_homotopy l1) (eta_homotopy l2))).
+    apply ap; exact h.
+  Qed.
 
 Definition eta
   : SymMonoidalNatIso (SymMonoidalFunctor_comp K J) (SymMonoidalFunctor_id _).
@@ -439,19 +452,16 @@ Proof.
   + intros l1 l2; unfold smg_f2; simpl.
     refine (whiskerR (concat_1p _) _ @ _ @ (concat_p1 _)^).
     revert l1; srapply @slist_ind_to_2paths_in_gpd; hnf.
+    - srapply T_slist.
     - refine (whiskerR (K_fun_beta_lambda _) _ @ concat_1p _ @ _).
       change (eta_homotopy l2 = ap011 sapp (idpath nil) (eta_homotopy l2)).
       generalize (eta_homotopy l2); induction p; constructor.
-    - intros x l1 h.
-      refine (whiskerR (ap_pp K_fun (alpha (iota x) (J_fun l1) (J_fun l2)) (mm 1 (J_2 l1 l2))) _ @ _).
-      refine (whiskerR (concat2 (K_fun_beta_alpha _ _ _) (ap_cons_ap_K _ _) @ concat_1p _) _ @ _).
-      refine ((ap_pp (cons x) _ _)^ @ _ @ (ap011_sapp_ap_cons x _ _)^);
-        apply ap; exact h.
+    - exact (eta_cons l2).
 Defined.
 
 Proposition equiv_FSMG_slist : FSMG X <~> slist X.
 Proof.
-  srefine (equiv_adjointify K J eta_homotopy (fun x => (epsilon_homotopy x)^)).
+  exact (equiv_adjointify K J eta_homotopy (fun x => (epsilon_homotopy x)^)).
 Defined.
 
 End Coherence.

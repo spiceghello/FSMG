@@ -1,4 +1,4 @@
-path_algebra_lemmas.v
+hott_lemmas.v
 monoidalgroupoid.v
 lists.v
 FMG.v

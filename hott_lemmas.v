@@ -1,5 +1,5 @@
 Require Export HoTT.
-
+Require Export UnivalenceImpliesFunext.
 
 Definition eq_to_eqEquiv `{Funext} {A B : Type} {e e' : A <~> B} (h : equiv_fun e == equiv_fun e')
   : e = e'.
@@ -379,6 +379,7 @@ Proof.
   induction (x' y); constructor.
 Defined.
 
+Open Scope nat.
 Lemma transport_forall_nat_sigma_fst
   {A : nat -> Type}
   (B C : forall (n : nat), A n -> Type) (* X and P *)
@@ -540,6 +541,11 @@ Proof.
   unfold path_forall. apply ap_apD10inv_2.
 Defined.
 
+Definition path_forall2 {A B : Type} {P : A -> B -> Type} (f g : forall x y, P x y) :
+  (forall x y, f x y = g x y) -> f = g
+  :=
+  (fun E => path_forall f g (fun x => path_forall (f x) (g x) (E x))).
+
 Lemma ap_pf2
   {A B : Type} (P : A -> B -> Type) (f g : forall (x : A) (y : B), P x y) (h : forall (x : A) (y : B), f x y = g x y)
   (a : A) (b : B)
@@ -548,9 +554,9 @@ Proof.
   unfold path_forall2.
   refine (ap_compose (fun q => q a) (fun q => q b) _ @ _).
   enough (Hh : (apD10 (ap (fun q : forall (x : A) (x0 : B), P x x0 => q a) (path_forall f g (fun x : A => path_forall (f x) (g x) (h x)))) = h a)).
-    refine (ap (ap (fun q : forall x : B, P a x => q b)) ((eissect apD10 _)^ @ ap (apD10^-1) Hh) @ _).
+  + refine (ap (ap (fun q : forall x : B, P a x => q b)) ((eissect apD10 _)^ @ ap (apD10^-1) Hh) @ _).
     apply ap_apD10inv_D.
-  refine (ap apD10 (@ap_pf_D A (fun a => forall b : B, P a b) f g (fun x : A => path_forall (f x) (g x) (h x)) a) @ _).
+  + refine (ap apD10 (@ap_pf_D A (fun a => forall b : B, P a b) f g (fun x : A => path_forall (f x) (g x) (h x)) a) @ _).
   apply eisretr.
 Defined.
 
@@ -670,7 +676,7 @@ Proof.
   intros x y.
   enough (AB_t : IsTrunc n {p : x.1 = y.1 & transport B p x.2 = y.2}).
   + refine (trunc_equiv' {p : x.1 = y.1 & transport B p x.2 = y.2} _).
-    exact (BuildEquiv _ _ (path_sigma_uncurried B x y) _).
+    exact (Build_Equiv _ _ (path_sigma_uncurried B x y) _).
   + apply trunc_sigma.
 Defined.
 
@@ -753,7 +759,7 @@ Proof.
   apply (trunc_equiv' (Fin n) t^-1).
 Defined.
 
-Definition Is1Trunc_Finite `{Univalence}
+Definition Is1Trunc_Finite `{Univalence} `{Funext}
   : IsTrunc 1 {A : Type & Finite A}.
 Proof.
   apply trunc_sigma_succ.
@@ -770,6 +776,42 @@ Section sigmas.
 
 (* lemmas about sigma types with truncations, which we mainly need for BS *)
 
+Lemma path_sigma'_concat (* formerly path2_sigma' *)
+  {A : Type} (P : A -> Type)
+  {x x' x'' : A} {y : P x} {y' : P x'} {y'' : P x''}
+  (p : x = x') (p' : x' = x'') (q : p # y = y') (q' : p' # y' = y'')
+  : path_sigma' P p q @ path_sigma' P p' q' = path_sigma' P (p @ p') (concat_D q q').
+Proof.
+  induction p, p', q, q'; constructor.
+Defined.
+
+Lemma path2_sigma'
+  {A : Type} (P : A -> Type)
+  {x x' : A} {y : P x} {y' : P x'}
+  {p p' : x = x'} (q : p # y = y') (q' : p' # y = y')
+  (r : p = p') (s : q = ap (fun z => transport P z y) r @ q')
+  : path_sigma' P p q = path_sigma' P p' q'.
+Proof.
+  induction r, q', p; simpl in *.
+  apply ap. exact s.
+Defined.
+
+Lemma path_sigma'_1
+  {A : Type} (P : A -> Type)
+  {x : A} {y : P x}
+  {p : x = x} (q : p # y = y)
+  (r : p = idpath) (s : ap (fun z : x = x => transport P z y) r = q)
+  : path_sigma' P p q = idpath.
+Proof.
+  enough (t : (p; q) = (idpath; idpath) :> {z : x = x & z # y = y}).
+  { unfold path_sigma', path_sigma.
+    change (path_sigma_uncurried P (x; y) (x; y) (p; q) = path_sigma_uncurried P (x; y) (x; y) (idpath; idpath)).
+    apply ap; exact t. }
+  srefine (path_sigma' _ r _).
+  refine (@transport_paths_Fl (x = x) _ (fun z => transport P z y) p idpath y r _ @ _).
+  apply moveR_Vp; refine (s^ @ (concat_p1 _)^).
+Defined. 
+
 Lemma sigma_truncfib
   {A : Type} (P : A -> Type)
   {x x' : A} {y : P x} {y' : P x'}
@@ -777,8 +819,7 @@ Lemma sigma_truncfib
   (p : x = x')
   : (x; y) = (x'; y').
 Proof.
-  srapply @path_sigma'.
-  exact p.
+  refine (path_sigma' _ p _).
   apply path_ishprop.
 Defined.
 
@@ -790,6 +831,30 @@ Lemma sigma'_truncfib
 Proof.
   refine (path_sigma P a b p _).
   apply path_ishprop.
+Defined.
+
+Lemma sigma_truncfib_concat
+  {A : Type} (P : A -> Type)
+  {x x' x'' : A} {y : P x} {y' : P x'} {y'' : P x''}
+  (T : forall a : A, IsHProp (P a))
+  (p : x = x') (p' : x' = x'')
+  : @sigma_truncfib A P _ _ y y' T p @ @sigma_truncfib A P _ _ y' y'' T p'
+    = @sigma_truncfib A P _ _ y y'' T (p @ p').
+Proof.
+  unfold sigma_truncfib; simpl.
+  refine (path_sigma'_concat P p p' _ _ @ _).
+  apply ap. srapply @path_ishprop.
+Defined.
+
+Lemma sigma_truncfib_1
+  {A : Type} (P : A -> Type)
+  (x : A) (y : P x)
+  (T : forall a : A, IsHProp (P a))
+  : @sigma_truncfib A P x x y y T idpath = idpath.
+Proof.
+  unfold sigma_truncfib.
+  change (path_sigma' P idpath (path_ishprop (transport P 1 y) y) = path_sigma' P idpath idpath).
+  apply ap. srapply @path_ishprop.
 Defined.
 
 Lemma sigma_truncfib_pr1
@@ -810,8 +875,8 @@ Lemma path_sigma_truncfib
   : ap pr1 p = ap pr1 q -> p = q.
 Proof.
   intro r; srapply @path_path_sigma.
-  exact r.
-  apply path_ishprop.
+  - exact r.
+  - apply path_ishprop.
 Defined.
 
 Lemma path_sigma'_pr1
@@ -885,7 +950,7 @@ Defined.
 Lemma path_path_sigma'_truncfib_path_ishprop
   {A : Type} (P : A -> Type)
   {x x' : A} {p q : x = x'} (r : p = q) {y : P x} {y' : P x'}
-  (T : forall a : A, IsTrunc -1 (P a))
+  (T : forall a : A, IsTrunc (-1) (P a))
   : path_sigma' P p (path_ishprop (transport P p y) y') = path_sigma' P q (path_ishprop (transport P q y) y').
 Proof.
   induction r; constructor.
@@ -925,7 +990,7 @@ Lemma path_sigma'_ap_truncfib
   {A : Type} (P : A -> Type) {A' : Type} (P' : A' -> Type)
   (F1 : A -> A') (F2 : forall a : A, P a -> P' (F1 a))
   {x x' : A} {y : P x} {y' : P x'} (p : x = x') (p' : transport P p y = y')
-  (T : forall a' : A', IsTrunc -1 (P' a'))
+  (T : forall a' : A', IsTrunc (-1) (P' a'))
   : ap (fun z : {a : A & P a} => (F1 z.1; F2 z.1 z.2)) (path_sigma' P p p') = path_sigma' P' (ap F1 p) (center (transport P' (ap F1 p) (F2 x y) = (F2 x' y'))).
 Proof.
   refine (path_sigma'_ap _ _ _ _ _ _ @ _).
@@ -978,10 +1043,10 @@ Proof.
     unfold sigma_function. srapply @path_sigma'.
     - apply eissect.
     - path_via (transport P (eissect F1 a) ((F2 (F1^-1 (F1 a)))^-1 (transport P' (ap F1 (eissect F1 a)^) ((F2 a) b)))).
-        apply ap. apply ap. refine (ap (fun z => transport P' z _) _). refine (_ @ (ap_V _ _)^). apply ap. apply eisadj.
+        { apply ap. apply ap. refine (ap (fun z => transport P' z _) _). refine (_ @ (ap_V _ _)^). apply ap. apply eisadj. }
       refine (ap (transport P (eissect F1 a)) (ap ((F2 (F1^-1 (F1 a)))^-1) (@transport_ap' A P A' P' F1 F2 _ _ (eissect F1 a)^ b (transport P (eissect F1 a)^ b) idpath)) @ _).
       path_via (transport P (eissect F1 a) (transport P (eissect F1 a)^ b)).
-        apply ap. apply eissect.
+        { apply ap. apply eissect. }
       refine ((transport_pp _ _ _ _)^ @ _).
       exact (ap (fun z => transport P z b) (concat_Vp _)).
 Defined.
@@ -1185,7 +1250,7 @@ Proof.
   induction p; constructor.
 Defined.
 
-Lemma reduce_contr_sigma_bastard
+Lemma contr_sigma_prop
   {A B : Type} (C : B -> Type)
   (T : forall b : B, IsHProp (C b))
   (f : A -> sig C) (bx : B) (cx : C bx)
@@ -1194,12 +1259,12 @@ Proof.
   intros [[cent_a cent_p] cont].
   set (cont' := fun (a : A) (p : (f a).1 = bx) => cont (a; p)).
   transparent assert (cont_a : (forall (a : A) (p : (f a).1 = bx), cent_a = a)).
-    exact (fun a p => (cont' a p)..1).
+    { exact (fun a p => (cont' a p)..1). }
   transparent assert (cont_p : (forall (a : A) (p : (f a).1 = bx), transport (fun a : A => (f a).1 = bx) (cont' a p) ..1 cent_p = p)).
-    exact (fun a p => (cont' a p)..2).
+    { exact (fun a p => (cont' a p)..2). }
   unfold cont' in cont_a, cont_p. clear cont'.
 
-  srapply @BuildContr.
+  srapply @Build_Contr.
   + srefine (_; _).
     - exact cent_a.
     - simpl. srapply @sigma_truncfib. exact cent_p.
@@ -1217,18 +1282,203 @@ Defined.
 
 End sigmas.
 
+Section connectedness.
 
-Section lib.
-Context `{Funext}.
-(* from the library *)
-Definition path_forall_V `{A : Type} `{P : A -> Type} (f g : forall x, P x)
-           (p : f == g)
-  : path_forall _ _ (fun x => (p x)^) = (path_forall _ _ p)^.
+Context `{Univalence}.
+
+Definition path_connected `{Univalence}
+  (A : Type) {C : Contr (Trunc 0 A)} (x y : A)
+  : merely (x = y).
 Proof.
-  transitivity (path_forall _ _ (fun x => (apD10 (path_forall _ _ p) x)^)).
-  f_ap. symmetry. apply (@ap _ _ (fun h x => (h x)^)). apply eisretr.
-  transitivity (path_forall _ _ (apD10 (path_forall _ _ p)^)).
-  apply ap, inverse. apply apD10_V.
-  apply eissect.
+  refine ((equiv_path_Tr x y)^-1 (path_contr (tr x) (tr y))).
 Defined.
-End lib.
+
+Lemma conn_to_prop {A : Type} {C : Contr (Trunc 0 A)}
+  (P : A -> Type) (T : forall a : A, IsHProp (P a))
+  : forall a0 : A, P a0 -> forall a : A, P a.
+Proof.
+  intros a0 y a.
+  set (p := path_connected A a0 a).
+  generalize p; clear p. srapply @Trunc_rec; intro p.
+  exact (transport P p y).
+Defined.
+
+Lemma conn_to_prop_at_point {A : Type} {C : Contr (Trunc 0 A)}
+  (P : A -> Type) (T : forall a : A, IsHProp (P a))
+  (a0 : A) (a0' : P a0)
+  : @conn_to_prop A C P T a0 a0' a0 = a0'.
+Proof.
+  srapply @path_ishprop.
+Defined.
+
+End connectedness.
+
+Section ap_equiv.
+
+Context {A B : Type} {f : A -> B} (isequiv_f : IsEquiv f).
+
+Lemma retr_sect {x y : A} (p : x = y)
+  : ap f^-1 (ap f p) @ eissect f y = eissect f x @ p.
+Proof.
+  induction p.
+  exact (concat_1p _ @ (concat_p1 _)^).
+(*   refine (whiskerR (ap_compose f f^-1 p)^ _ @ _).
+  exact (@concat_A1p A (f^-1 o f) (eissect f) _ _ p). *)
+Defined.
+
+Lemma sect_retr {w z : B} (p : w = z)
+  : ap f (ap f^-1 p) @ eisretr f z = eisretr f w @ p.
+Proof.
+  induction p.
+  exact (concat_1p _ @ (concat_p1 _)^).
+Defined.
+
+Lemma unap {x y} (p : f x = f y)
+  : x = y.
+Proof.
+  exact (((eissect f x)^ @ ap f^-1 p) @ eissect f y).
+Defined.
+
+Lemma unap_sect {x y}
+  : Sect (@unap x y) (ap f).
+Proof.
+  unfold Sect; intro p; unfold unap.
+  refine (ap_pp _ _ _ @ whiskerR (ap_pp _ _ _ @ whiskerR (ap_V _ _) _) _ @ concat_pp_p _ _ _ @ _).
+  refine (whiskerL _ (whiskerL _ (eisadj f _)^) @ _).
+  refine (whiskerL _ (sect_retr p) @ _).
+  refine (whiskerL _ (whiskerR (eisadj f x) _) @ _).
+  exact (concat_p_pp _ _ _ @ whiskerR (concat_Vp _) _ @ concat_1p _).
+Defined.
+
+Lemma unap_retr {x y}
+  : Sect (ap f) (@unap x y).
+Proof.
+  unfold Sect; intro p; unfold unap.
+  induction p.
+  exact (whiskerR (concat_p1 _) _ @ concat_Vp _).
+Defined.
+
+Lemma unap_unique {x y} (p : f x = f y)
+  (q : x = y) (r : ap f q = p)
+  : (unap p) = q.
+Proof.
+  unfold unap; simpl.
+  rewrite <- r.
+  refine (concat_pp_p _ _ _ @ _); apply moveR_Vp.
+  exact (retr_sect q).
+Defined.
+
+End ap_equiv.
+
+Section apequiv.
+
+Context `{Univalence}.
+Context {A B : Type} (f : A -> B).
+
+Theorem apequiv_equiv (apeq : (forall (x y : A), IsEquiv (@ap A B f x y))) (a0 : A) (t' : forall b' : B, @tr 0 _ (f a0) = tr b')
+  : IsEquiv f.
+Proof.
+  srefine (isequiv_issurj_tr0_isequiv_ap f).
+  unfold IsSurjection.
+  unfold hfiber.
+  intro b'.
+  change (Contr (Trunc (-1) {x : Trunc 0 A & Trunc_ind (fun _ : Trunc 0 A => Trunc 0 B) (fun x0 : A => tr (f x0)) x = b'})).
+  srapply @Build_Contr.
+  + apply tr.
+    exists (tr a0).
+    strip_truncations. simpl.
+    exact (t' b').
+  + intros. srapply @path_ishprop.
+Defined.
+
+Theorem apequiv_connected (c : Contr (Trunc 0 A)) (a0 a1 : A) (e : IsEquiv (@ap A B f a0 a1))
+  : forall x y : A, IsEquiv (@ap A B f x y).
+Proof.
+  transparent assert (t : (forall a : A, IsHProp (forall y : A, IsEquiv (@ap A B f a y)))).
+  { intro a. srapply @trunc_forall. }
+  srefine (conn_to_prop (fun x => forall y : A, IsEquiv (@ap A B f x y)) t a0 _); simpl.
+  transparent assert (t' : (forall a : A, IsHProp (IsEquiv (@ap A B f a0 a)))).
+  { intro a. exact _. }
+  srefine (conn_to_prop (fun y => IsEquiv (@ap A B f a0 y)) t' a1 _); simpl.
+  exact e.
+Defined.
+
+Theorem apequiv_equiv_connected (cA : Contr (Trunc 0 A)) (cB : Contr (Trunc 0 B))
+  (a0 a1 : A) (e : IsEquiv (@ap A B f a0 a1))
+  : IsEquiv f.
+Proof.
+  srapply apequiv_equiv.
+  + exact (apequiv_connected cA a0 a1 e).
+  + exact a0.
+  + intro b'. srapply @path_ishprop.
+Defined.
+
+End apequiv.
+
+
+Section Universe.
+
+Context `{Univalence}.
+
+(* about truncations *)
+
+Lemma trunc_path_type_sym {A B : Type} {n : trunc_index}
+  : IsTrunc n (A = B) <~> IsTrunc n (B = A).
+Proof.
+  srapply @equiv_iff_hprop.
+  all: refine (transport (IsTrunc n) _).
+  all: srapply @path_universe_uncurried.
+  all: apply equiv_path_inverse.
+Defined.
+
+Lemma trunc_truncation (n : nat) (A : Type)
+  : IsHProp (merely (A <~> Fin n)).
+Proof.
+  refine _. (* srapply istrunc_truncation. *)
+Defined.
+
+Definition trunc_sigma' (* as learned from Kristian *)
+  {A : Type} {B : A -> Type} {n : trunc_index}
+  {TB : forall a : A, IsTrunc n.+1 (B a)}
+  {Ts : forall p q : sig B, IsTrunc n (p.1 = q.1)}
+  : IsTrunc n.+1 (sig B).
+Proof.
+  intros x y.
+  enough (Tp : (IsTrunc n {p : x.1 = y.1 & transport B p x.2 = y.2})).
+  { revert Tp. srapply @trunc_equiv'.
+  exact (Build_Equiv _ _ (path_sigma_uncurried B x y) _). }
+  srapply @trunc_sigma.
+Defined.
+
+Definition hset_Finite (* as learned from Kristian *)
+  (A : Type)
+  : Finite A -> IsHSet A.
+Proof.
+  intros [n t]; revert t; srapply @Trunc_rec; intro e.
+  exact (@trunc_equiv' (Fin n) A e^-1 0 _).
+Defined.
+
+Definition tr_plusone (n : nat) (A : Type) (t : merely (A <~> Fin n))
+  : merely (A + Unit <~> Fin n.+1).
+Proof.
+  strip_truncations; apply tr.
+  exact (t +E 1%equiv).
+Defined.
+
+Lemma idequiv_plus_idequiv {A B : Type}
+  : @equiv_idmap A +E @equiv_idmap B = @equiv_idmap (A + B).
+Proof.
+  srapply @eq_to_eqEquiv. intros [a | b]; constructor.
+Defined.
+
+Lemma ua_ap_plusone {A B : Type} (e : A <~> B)
+  : ap (fun X : Type => X + Unit) (path_universe_uncurried e)
+    = path_universe_uncurried (e +E 1%equiv).
+Proof.
+  revert e; revert B.
+  refine (equiv_induction (fun B e => ap (fun X : Type => X + Unit) (path_universe_uncurried e) = path_universe_uncurried (e +E 1)) _).
+  exact (ap (ap (fun X : Type => X + Unit)) path_universe_1 @ path_universe_1^ @ ap path_universe_uncurried idequiv_plus_idequiv^).
+Defined.
+
+
+End Universe.

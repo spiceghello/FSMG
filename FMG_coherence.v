@@ -65,7 +65,7 @@ Definition J_alpha
     alpha (J_fun a) (J_fun b) (J_fun c) @ (ap011 m 1 (J_2 b c) @ J_2 a (app b c))
     = (ap011 m (J_2 a b) 1 @ J_2 (app a b) c) @ ap J_fun (alpha_list a b c).
 Proof.
-  intros l1 l2 l3; induction l1 as [|x l1]; simpl.
+  intros l1 l2 l3; induction l1 as [|x l1]; hnf.
   + refine (_ @ (concat_p1 _)^).
     refine (whiskerL _ (lambda_FMG_natural (J_2 l2 l3))^ @ concat_p_pp _ _ _ @ _); apply whiskerR.
     exact (alpha_lambda_FMG (J_fun l2) (J_fun l3)).
@@ -90,7 +90,7 @@ Definition J_rho
   : forall a : list X,
   rho (J_fun a) = (ap011 m 1 1 @ J_2 a nil) @ ap J_fun (rho_list a).
 Proof.
-  intro l1; induction l1 as [|x l1]; simpl.
+  intro l1; induction l1 as [|x l1]; hnf.
   + refine (_^ @ (concat_1p _)^ @ (concat_p1 _)^).
     exact lambda_rho_FMG_e.
   + refine (_ @ concat_p_pp _ _ _ @ (concat_1p _)^ @ concat_p_pp _ _ _);
@@ -100,17 +100,8 @@ Proof.
 Defined.
 
 Definition J
-  : MonoidalFunctor (listMG X) (FMG_MG X).
-Proof.
-  srapply @Build_MonoidalFunctor;
-  unfold mg_mm, mg_m; simpl.
-  + exact J_fun.
-  + constructor.
-  + exact J_2.
-  + exact J_alpha. 
-  + exact J_lambda.
-  + exact J_rho.
-Defined.
+  : MonoidalFunctor (listMG X) (FMG_MG X)
+  := Build_MonoidalFunctor (listMG X) (FMG_MG X) J_fun idpath J_2 J_alpha J_lambda J_rho.
 
 (***)
 
@@ -161,6 +152,7 @@ Proof.
   + exact eta_homotopy_alpha. (* this case uses J_alpha, which uses pentagon and alpha_lambda, which uses both pentagon and triangle *)
   + exact eta_homotopy_lambda. (* this case is simpler and does not use coherence diagrams (J_lambda does not) *)
   + exact eta_homotopy_rho. (* this case uses J_rho, which uses both coherence diagrams (because of rho_alpha and lambda_rho_e) *)
+  + exact T_FMG.
 Defined.
 
 (** Check that this is a monoidal natural isomorphism **)
@@ -172,6 +164,7 @@ Proof.
   + exact eta_homotopy.
   + constructor.
   + intros; unfold mg_f2; simpl.
+    change (idpath @ (mm (eta_homotopy a) (eta_homotopy b) @ J_2 (K_fun a) (K_fun b)) = ap011 m (eta_homotopy a) (eta_homotopy b) @ (J_2 (K_fun a) (K_fun b) @ 1)).
     exact (concat_1p _ @ whiskerL _ (concat_p1 _)^).
 Defined.
 
@@ -191,7 +184,8 @@ Defined.
 Corollary IsHSet_FMG
   : IsHSet (FMG X).
 Proof.
-  exact (@hset_axiomK (FMG X) (fun x p => FMG_coherence p idpath)).
+  srapply hset_axiomK.
+  exact (fun x p => FMG_coherence p idpath).
 Defined.
 
 (* other important stuff *)
@@ -217,11 +211,11 @@ Proof.
   + constructor.
   + intros l1 l2; unfold mg_f2; simpl.
     refine (whiskerR (concat_1p _) _ @ _ @ (concat_p1 _)^).
-    induction l1 as [|x l1]; simpl.
+    induction l1 as [|x l1]; hnf.
     - refine (whiskerR (K_fun_beta_lambda _) _ @ concat_1p _ @ _).
       exact (app_reflnil _)^.
     - refine (whiskerR (ap_pp K_fun (alpha (iota x) (J_fun l1) (J_fun l2)) (mm 1 (J_2 l1 l2))) _ @ _).
-      refine (whiskerR (concat2 (K_fun_beta_alpha _ _ _) (ap_cons_ap_K _ _) @ concat_1p _) _ @ _).
+      refine (whiskerR (@concat2 _ _ _ _ (ap K_fun (alpha (iota x) (J_fun l1) (J_fun l2))) _ (ap K_fun (mm 1 (J_2 l1 l2))) (ap (cons x) (ap K (J_2 l1 l2))) (K_fun_beta_alpha _ _ _) (ap_cons_ap_K x (J_2 l1 l2)) @ concat_1p _) _ @ _).
       refine ((ap_pp (cons x) _ _)^ @ _ @ (ap_cons_app x _ _)^);
         apply ap; exact IHl1.
 Defined.

@@ -185,7 +185,7 @@ Proof.
 Defined.
 
 Definition FSMG_ind_to_prop
-  (T' : forall (w : FSMG X), IsTrunc -1 (P w))
+  (T' : forall (w : FSMG X), IsTrunc (-1) (P w))
   : forall w : FSMG X, P w.
 Proof.
   refine (FSMG_ind_to_set _ _ _ _ _);
@@ -485,7 +485,7 @@ Lemma FSMG_rec_to_prop
   (e' : A)
   (iota' : X -> A)
   (m' : A -> A -> A)
-  (T' : IsTrunc -1 A)
+  (T' : IsTrunc (-1) A)
   : FSMG X -> A.
 Proof.
   srapply (@FSMG_rec_to_set A e' iota' m');
@@ -553,6 +553,6 @@ Definition bigon_var_FSMG (a b : FSMG X)
   := @bigon_var (FSMG_SMG X) a b.
 
 Definition hexagon_var_FSMG (a b c : FSMG X)
-  := @hexagon_var (FSMG_SMG X) a b c.
+  := @ hexagon_var (FSMG_SMG X) a b c.
 
 End Redefinitions.

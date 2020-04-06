@@ -68,6 +68,7 @@ Proof.
     - intros ?? IHa IHb; simpl.
       refine (whiskerL _ (ap_idmap _) @ _ @ whiskerR (FSMG_functor_fun_tau idmap a b)^ _).
       exact (@tau_natural (FSMG_SMG X) _ _ _ _ IHa IHb)^.
+    - exact T_FSMG.
   + constructor.
   + intros; simpl.
     refine (concat_1p _ @ (concat_p1 _)^).
@@ -85,39 +86,39 @@ Proof.
     - constructor.
     - intros ?? IHa IHb.
       exact (mm IHa IHb).
-    - intros ??? IHa IHb IHc; simpl.
-      refine (_ @ whiskerR (ap_compose (FSMG_functor_fun f) (FSMG_functor_fun g) _)^ _).
-      refine (whiskerL _ (FSMG_functor_fun_alpha (g o f) a b c) @ _).
-      refine (_ @ whiskerR ((FSMG_functor_fun_alpha g _ _ _)^ @ ap (ap (FSMG_functor_fun g)) (FSMG_functor_fun_alpha f a b c)^) _).
-      exact (@alpha_natural (FSMG_SMG Z) _ _ _ _ _ _ IHa IHb IHc)^.
-    - intros ? IHb; simpl.
-      refine (_ @ whiskerR (ap_compose (FSMG_functor_fun f) (FSMG_functor_fun g) _)^ _).
-      refine (whiskerL _ (FSMG_functor_fun_lambda (g o f) b) @ _).
-      refine (_ @ whiskerR ((FSMG_functor_fun_lambda g _)^ @ ap (ap (FSMG_functor_fun g)) (FSMG_functor_fun_lambda f b)^) _).
-      exact (@lambda_natural (FSMG_SMG Z) _ _ IHb)^.
-    - intros ? IHa; simpl.
-      refine (_ @ whiskerR (ap_compose (FSMG_functor_fun f) (FSMG_functor_fun g) _)^ _).
-      refine (whiskerL _ (FSMG_functor_fun_rho (g o f) a) @ _).
-      refine (_ @ whiskerR ((FSMG_functor_fun_rho g _)^ @ ap (ap (FSMG_functor_fun g)) (FSMG_functor_fun_rho f a)^) _).
-      exact (@rho_natural (FSMG_SMG Z) _ _ IHa)^.
-    - intros ?? IHa IHb; simpl.
-      refine (_ @ whiskerR (ap_compose (FSMG_functor_fun f) (FSMG_functor_fun g) _)^ _).
-      refine (whiskerL _ (FSMG_functor_fun_tau (g o f) a b) @ _).
-      refine (_ @ whiskerR ((FSMG_functor_fun_tau g _ _)^ @ ap (ap (FSMG_functor_fun g)) (FSMG_functor_fun_tau f a b )^) _).
-      exact (@tau_natural (FSMG_SMG Z) _ _ _ _ IHa IHb)^.
+    - abstract (intros ??? IHa IHb IHc; simpl;
+      refine (_ @ whiskerR (ap_compose (FSMG_functor_fun f) (FSMG_functor_fun g) _)^ _);
+      refine (whiskerL _ (FSMG_functor_fun_alpha (g o f) a b c) @ _);
+      refine ((@alpha_natural (FSMG_SMG Z) _ _ _ _ _ _ IHa IHb IHc)^ @ _);
+      exact (whiskerR ((FSMG_functor_fun_alpha g _ _ _)^ @ ap (ap (FSMG_functor_fun g)) (FSMG_functor_fun_alpha f a b c)^) _))
+        using FSMG_functor_comp_alpha.
+    - abstract (intros ? IHb; simpl;
+      refine (_ @ whiskerR (ap_compose (FSMG_functor_fun f) (FSMG_functor_fun g) _)^ _);
+      refine (whiskerL _ (FSMG_functor_fun_lambda (g o f) b) @ _);
+      refine ((@lambda_natural (FSMG_SMG Z) _ _ IHb)^ @ _);
+      exact (whiskerR ((FSMG_functor_fun_lambda g _)^ @ ap (ap (FSMG_functor_fun g)) (FSMG_functor_fun_lambda f b)^) _))
+        using FSMG_functor_comp_lambda.
+    - abstract (intros ? IHa; simpl;
+      refine (_ @ whiskerR (ap_compose (FSMG_functor_fun f) (FSMG_functor_fun g) _)^ _);
+      refine (whiskerL _ (FSMG_functor_fun_rho (g o f) a) @ _);
+      refine ((@rho_natural (FSMG_SMG Z) _ _ IHa)^ @ _);
+      exact (whiskerR ((FSMG_functor_fun_rho g _)^ @ ap (ap (FSMG_functor_fun g)) (FSMG_functor_fun_rho f a)^) _))
+        using FSMG_functor_comp_rho.
+    - abstract (intros ?? IHa IHb; simpl;
+      refine (_ @ whiskerR (ap_compose (FSMG_functor_fun f) (FSMG_functor_fun g) _)^ _);
+      refine (whiskerL _ (FSMG_functor_fun_tau (g o f) a b) @ _);
+      refine ((@tau_natural (FSMG_SMG Z) _ _ _ _ IHa IHb)^ @ _);
+      exact (whiskerR ((FSMG_functor_fun_tau g _ _)^ @ ap (ap (FSMG_functor_fun g)) (FSMG_functor_fun_tau f a b )^) _))
+        using FSMG_functor_comp_tau.
+    - exact T_FSMG.
   + constructor.
   + intros; simpl.
     refine (concat_1p _ @ (concat_p1 _)^).
 Defined.
 
 Definition FSMG_functor
-  : IsFunctor_Sym (fun X T_X => FSMG_SMG X).
-Proof.
-  srapply @Build_IsFunctor_Sym; simpl.
-  + exact FSMG_functor_arr.
-  + exact FSMG_functor_id.
-  + exact FSMG_functor_comp.
-Defined.
+  : IsFunctor_Sym (fun X T_X => FSMG_SMG X)
+  := Build_IsFunctor_Sym _ FSMG_functor_arr FSMG_functor_id FSMG_functor_comp.
 
 Definition phi {X : Type} {T_X : IsHSet X} {M : SymMonoidalGroupoid}
   (F : SymMonoidalFunctor (FSMG_SMG X) M)
@@ -320,14 +321,7 @@ Defined.
 Lemma FSMG_FreeFunctor
   : IsFreeFunctor_Sym (fun X T_X => FSMG_SMG X).
 Proof.
-  srapply @Build_IsFreeFunctor_Sym.
-  + exact FSMG_functor.
-  + apply @phi.
-  + apply @phi_natural_M.
-  + apply @psi.
-  + apply @psi_natural_X.
-  + apply @theta.
-  + apply @chi.
+  exact (Build_IsFreeFunctor_Sym _ FSMG_functor (@phi) (@phi_natural_M) (@psi) (@psi_natural_X) (@theta) (@chi)).
 Defined.
 
 End Free.

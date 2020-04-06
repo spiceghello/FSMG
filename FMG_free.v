@@ -44,7 +44,7 @@ Definition FMG_functor_id
     MonoidalNatIso (FMG_functor_arr X X T_X T_X idmap) (MonoidalFunctor_id (FMG_MG X)).
 Proof.
   intros; srapply @Build_MonoidalNatIso; simpl.
-  + unfold pointwise_paths. srapply @FMG_ind_to_paths_in_gpd; simpl.
+  + unfold pointwise_paths. srefine (FMG_ind_to_paths_in_gpd _ _ _ _ _ _ _ _ _ _ T_FMG); simpl.
     - constructor.
     - constructor.
     - intros ?? IHa IHb.
@@ -70,39 +70,37 @@ Definition FMG_functor_comp
       (FMG_functor_arr X Z T_X T_Z (fun x : X => g (f x))).
 Proof.
   intros; srapply @Build_MonoidalNatIso; simpl.
-  + unfold pointwise_paths. srapply @FMG_ind_to_paths_in_gpd; simpl.
+  + unfold pointwise_paths. srefine (FMG_ind_to_paths_in_gpd _ _ _ _ _ _ _ _ _ _ T_FMG); simpl.
     - constructor.
     - constructor.
     - intros ?? IHa IHb.
       exact (mm IHa IHb).
-    - intros ??? IHa IHb IHc; simpl.
-      refine (_ @ whiskerR (ap_compose (FMG_functor_fun f) (FMG_functor_fun g) _)^ _).
-      refine (whiskerL _ (FMG_functor_fun_alpha (g o f) a b c) @ _).
-      refine (_ @ whiskerR ((FMG_functor_fun_alpha g _ _ _)^ @ ap (ap (FMG_functor_fun g)) (FMG_functor_fun_alpha f a b c)^) _).
-      exact (@alpha_natural (FMG_MG Z) _ _ _ _ _ _ IHa IHb IHc)^.
-    - intros ? IHb; simpl.
-      refine (_ @ whiskerR (ap_compose (FMG_functor_fun f) (FMG_functor_fun g) _)^ _).
-      refine (whiskerL _ (FMG_functor_fun_lambda (g o f) b) @ _).
-      refine (_ @ whiskerR ((FMG_functor_fun_lambda g _)^ @ ap (ap (FMG_functor_fun g)) (FMG_functor_fun_lambda f b)^) _).
-      exact (@lambda_natural (FMG_MG Z) _ _ IHb)^.
-    - intros ? IHa; simpl.
-      refine (_ @ whiskerR (ap_compose (FMG_functor_fun f) (FMG_functor_fun g) _)^ _).
-      refine (whiskerL _ (FMG_functor_fun_rho (g o f) a) @ _).
-      refine (_ @ whiskerR ((FMG_functor_fun_rho g _)^ @ ap (ap (FMG_functor_fun g)) (FMG_functor_fun_rho f a)^) _).
-      exact (@rho_natural (FMG_MG Z) _ _ IHa)^.
+    - abstract (intros ??? IHa IHb IHc; simpl;
+      refine (_ @ whiskerR (ap_compose (FMG_functor_fun f) (FMG_functor_fun g) _)^ _);
+      refine (whiskerL _ (FMG_functor_fun_alpha (g o f) a b c) @ _);
+      refine ((@alpha_natural (FMG_MG Z) _ _ _ _ _ _ IHa IHb IHc)^ @ _);
+      exact (whiskerR ((FMG_functor_fun_alpha g _ _ _)^ @ ap (ap (FMG_functor_fun g)) (FMG_functor_fun_alpha f a b c)^) _))
+        using FMG_functor_comp_alpha.
+    - abstract (intros ? IHb; simpl;
+      refine (_ @ whiskerR (ap_compose (FMG_functor_fun f) (FMG_functor_fun g) _)^ _);
+      refine (whiskerL _ (FMG_functor_fun_lambda (g o f) b) @ _);
+      refine ((@lambda_natural (FMG_MG Z) _ _ IHb)^ @ _);
+      exact (whiskerR ((FMG_functor_fun_lambda g _)^ @ ap (ap (FMG_functor_fun g)) (FMG_functor_fun_lambda f b)^) _))
+        using FMG_functor_comp_lambda.
+    - abstract (intros ? IHa; simpl;
+      refine (_ @ whiskerR (ap_compose (FMG_functor_fun f) (FMG_functor_fun g) _)^ _);
+      refine (whiskerL _ (FMG_functor_fun_rho (g o f) a) @ _);
+      refine ((@rho_natural (FMG_MG Z) _ _ IHa)^ @ _);
+      exact (whiskerR ((FMG_functor_fun_rho g _)^ @ ap (ap (FMG_functor_fun g)) (FMG_functor_fun_rho f a)^) _))
+        using FMG_functor_comp_rho.
   + constructor.
   + intros; simpl.
     refine (concat_1p _ @ (concat_p1 _)^).
 Defined.
 
 Definition FMG_functor
-  : IsFunctor (fun X T_X => FMG_MG X).
-Proof.
-  srapply @Build_IsFunctor; simpl.
-  + exact FMG_functor_arr.
-  + exact FMG_functor_id.
-  + exact FMG_functor_comp.
-Defined.
+  : IsFunctor (fun X T_X => FMG_MG X)
+  := Build_IsFunctor (fun X T_X => FMG_MG X) FMG_functor_arr FMG_functor_id FMG_functor_comp.
 
 Definition phi {X : Type} {T_X : IsHSet X} {M : MonoidalGroupoid}
   (F : MonoidalFunctor (FMG_MG X) M)
@@ -277,14 +275,7 @@ Defined.
 Lemma FMG_FreeFunctor
   : IsFreeFunctor (fun X T_X => FMG_MG X).
 Proof.
-  srapply @Build_IsFreeFunctor.
-  + exact FMG_functor.
-  + apply @phi.
-  + apply @phi_natural_M.
-  + apply @psi.
-  + apply @psi_natural_X.
-  + apply @theta.
-  + apply @chi.
+  exact (Build_IsFreeFunctor (fun X T_X => FMG_MG X) FMG_functor (@phi) (@phi_natural_M) (@psi) (@psi_natural_X) (@theta) (@chi)).
 Defined.
 
 End Free.

@@ -1,4 +1,3 @@
-Require Import HoTT.
 Require Export monoidalgroupoid.
 
 Section lists.
@@ -122,13 +121,13 @@ Proof.
   refine ((list_decode_encode p)^ @ _ @ list_decode_encode q).
   apply ap.
   srapply @path_ishprop.
-  exact (@trunc_code -2 T l k).
+  exact (@trunc_code (-2) T l k).
 Defined.
 
 Lemma IsHSet_list {T : IsHSet X} 
   : IsHSet (list X).
 Proof.
-  srapply @hset_axiomK.
+  srapply hset_axiomK.
   unfold axiomK; intros.
   exact (set_list x x p idpath).
 Defined.
@@ -141,7 +140,7 @@ Proof.
   apply whiskerL; apply whiskerR.
   refine (ap_compose list_encode list_decode a @ _ @ (ap_compose list_encode list_decode b)^);
   apply ap.
-  apply (@trunc_code -1 T l k).
+  apply (@trunc_code (-1) T l k).
 Defined.
 
 End list_truncations.

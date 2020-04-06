@@ -1,4 +1,4 @@
-Require Export path_algebra_lemmas.
+Require Export hott_lemmas.
 
 (* Part I : definition of the type slist. *)
 
@@ -12,6 +12,7 @@ Global Arguments cons {X} _ _.
 
 End slist_private.
 
+Declare Scope slist_scope.
 Infix "::" := cons (at level 60, right associativity) : slist_scope.
 Open Scope slist_scope.
 
@@ -128,7 +129,7 @@ Proof.
 Defined.
 
 Definition slist_ind_to_prop
-  (T_slist' : forall (l : slist X), IsTrunc -1 (P l))
+  (T_slist' : forall (l : slist X), IsTrunc (-1) (P l))
   : forall l : slist X, P l.
 Proof.
   srapply @slist_ind_to_set;
@@ -333,7 +334,7 @@ Definition slist_rec_to_prop
   (P : Type)
   (nil' : P)
   (cons' : X -> P -> P)
-  (T_slist' : IsTrunc -1 P)
+  (T_slist' : IsTrunc (-1) P)
   : slist X -> P.
 Proof.
   srefine (@slist_rec_to_set P nil' cons' _ _);
@@ -409,15 +410,15 @@ Context {X : Type}.
     apply triple.
   Qed.
 
-(*   Definition sapp_trunc
+  Definition sapp_trunc
     : IsTrunc 1 (slist X -> slist X).
   Proof.
     exact (@trunc_forall H (slist X) (fun _ => slist X) 1 (fun _ => T_slist)).
-  Defined. *)
+  Defined.
 
 Definition sapp
   : slist X -> slist X -> slist X
-  := slist_rec _ idmap sapp_cons sapp_swap sapp_double sapp_triple _.
+  := slist_rec _ idmap sapp_cons sapp_swap sapp_double sapp_triple sapp_trunc.
 
 End sapp.
 
@@ -474,6 +475,7 @@ Proof.
     change (x :: (l1 ++ l2) ++ l3 = x :: l1 ++ l2 ++ l3).
     apply ap; exact h.
   + hnf. apply alpha_slist_swap.
+  + exact T_slist.
 Defined.
 
 (* lambda *)
@@ -504,6 +506,7 @@ Proof.
     change (x :: l ++ nil = x :: l).
     apply ap; exact h.
   + hnf. apply rho_slist_swap.
+  + exact T_slist.
 Defined.
 
 (* tau *)
@@ -536,6 +539,7 @@ Proof.
     refine (swap x y (l1 ++ l2) @ _).
     apply ap. exact h.
   + hnf. apply sapp_Q_swap.
+  + exact T_slist.
 Defined.
 
 Lemma sapp_R (x y : X) (l1 : slist X)
@@ -544,6 +548,7 @@ Lemma sapp_R (x y : X) (l1 : slist X)
     (ap (cons x) (sapp_Q y l1 l2) @ sapp_Q x (y :: l1) l2) @ ap (fun z => l2 ++ z) (swap x y l1).
 Proof.
   srapply @slist_ind_to_2paths_in_gpd; hnf.
+  + srapply T_slist.
   + simpl. refine (concat_p1 _ @ _ @ (concat_1p _)^).
     change (swap x y l1 = ap idmap (swap x y l1)).
     exact (ap_idmap _)^.
@@ -591,6 +596,7 @@ Lemma tau_slist
     l1 ++ l2 = l2 ++ l1.
 Proof.
   srapply @slist_ind_to_fam_paths_in_gpd; hnf.
+  + srapply T_slist.
   + change (forall l' : slist X, l' = l' ++ nil).
     srapply @slist_ind_to_paths_in_gpd; hnf.
     - constructor.
@@ -598,6 +604,7 @@ Proof.
       change (x :: l = x :: l ++ nil).
       exact (ap (cons x) h).
     - hnf. apply tau_slist_nil_swap.
+    - srapply T_slist.
   + intros x l1 h l2.
     change (x :: l1 ++ l2 = l2 ++ x :: l1).
     exact (ap (cons x) (h l2) @ sapp_Q x l1 l2).
@@ -611,6 +618,7 @@ Lemma pentagon_slist
       = (ap011 sapp (alpha_slist l1 l2 l3) 1 @ alpha_slist l1 (l2 ++ l3) l4) @ ap011 sapp 1 (alpha_slist l2 l3 l4).
 Proof.
   intros; revert l1; srapply @slist_ind_to_2paths_in_gpd; hnf.
+  + srapply T_slist.
   + simpl. refine (concat_p1 _ @ _ @ (concat_1p _)^).
     change (alpha_slist l2 l3 l4 = ap idmap (alpha_slist l2 l3 l4)).
     exact (ap_idmap _)^.
@@ -630,6 +638,7 @@ Lemma triangle_slist
       = ap011 sapp (rho_slist l1) 1.
 Proof.
   intros; revert l1; srapply @slist_ind_to_2paths_in_gpd; hnf.
+  + srapply T_slist.
   + constructor.
   + intros x l1 h; unfold lambda_slist.
     change (ap (cons x) (alpha_slist l1 nil l2) @ ap (cons x) 1 = ap011 sapp (ap (cons x) (rho_slist l1)) 1).
@@ -648,6 +657,7 @@ Lemma sapp_H (x : X) (l1 l3 : slist X)
 Proof.
   intro l2; repeat rewrite (ap011_1p sapp); revert l2.
   srapply @slist_ind_to_2paths_in_gpd; hnf.
+  + srapply T_slist.
   + simpl. refine (concat2 (concat_p1 _ @ concat_1p _) (concat_p1 _) @ _ @ (concat_1p _)^).
     refine (whiskerL _ (ap_idmap _)^ @ _); apply whiskerR.
     refine ((ap_compose idmap (cons x) _)^ @ ap_compose (cons x) idmap _).
@@ -677,7 +687,9 @@ Lemma hexagon_slist
     = (ap011 sapp (tau_slist l1 l2) 1 @ alpha_slist l2 l1 l3) @ ap011 sapp 1 (tau_slist l1 l3).
 Proof.
   intros; revert l2; revert l1; srapply @slist_ind_to_fam_2paths_in_gpd; hnf.
+  + srapply T_slist.
   + srapply @slist_ind_to_2paths_in_gpd; hnf.
+    - srapply T_slist.
     - change (1 @ tau_slist nil l3 @ 1 = 1 @ 1 @ ap idmap (tau_slist nil l3)).
       refine (concat_p1 _ @ concat_1p _ @ (ap_idmap _)^ @ (concat_1p _)^).
     - intros y l2 h.
@@ -686,8 +698,8 @@ Proof.
       refine (ap (ap (cons y)) h @ _).
       repeat rewrite (ap_pp (cons y)).
       refine (concat2 (concat2 _ 1) _).
-      change (ap (cons y) (ap011 sapp (tau_slist nil l2) (idpath l3)) = ap011 sapp (ap (cons y) (tau_slist nil l2)) 1).
-      exact (ap011_sapp_ap_cons y _ _)^.
+      { change (ap (cons y) (ap011 sapp (tau_slist nil l2) (idpath l3)) = ap011 sapp (ap (cons y) (tau_slist nil l2)) 1).
+      exact (ap011_sapp_ap_cons y _ _)^. }
       exact (ap011_sapp_ap_cons y (idpath l2) _)^.
   + intros x l1 hl1 l2.
     change ((ap (cons x) (alpha_slist l1 l2 l3) @ (ap (cons x) (tau_slist l1 (l2 ++ l3)) @ sapp_Q x l1 (l2 ++ l3))) @ alpha_slist l2 l3 (x :: l1) = (ap011 sapp (tau_slist (x :: l1) l2) 1 @ alpha_slist l2 (x :: l1) l3) @ ap011 sapp 1 (tau_slist (x :: l1) l3)).
@@ -707,7 +719,9 @@ Lemma bigon_slist
     tau_slist l1 l2 @ tau_slist _ _ = idpath.
 Proof.
   srapply @slist_ind_to_fam_2paths_in_gpd; hnf.
+  + srapply T_slist.
   + srapply @slist_ind_to_2paths_in_gpd; hnf.
+    - srapply T_slist.
     - constructor.
     - intros y l2 h.
       refine (whiskerL _ (concat_p1 _) @ _).
@@ -716,6 +730,7 @@ Proof.
       exact (ap (ap (cons y)) h).
   + intros x l1 hl1.
     srapply @slist_ind_to_2paths_in_gpd; hnf.
+    - srapply T_slist.
     - refine (whiskerR (concat_p1 _) _ @ _).
       change (ap (cons x) (tau_slist l1 nil) @ ap (cons x) (tau_slist nil l1) = ap (cons x) idpath).
       refine ((ap_pp (cons x) _ _)^ @ _).

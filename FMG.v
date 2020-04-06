@@ -142,7 +142,7 @@ Proof.
 Defined.
 
 Definition FMG_ind_to_prop
-  (T' : forall (w : FMG X), IsTrunc -1 (P w))
+  (T' : forall (w : FMG X), IsTrunc (-1) (P w))
   : forall w : FMG X, P w.
 Proof.
   refine (FMG_ind_to_set _ _ _ _);
@@ -374,7 +374,7 @@ Lemma FMG_rec_to_prop
   (e' : A)
   (iota' : X -> A)
   (m' : A -> A -> A)
-  (T' : IsTrunc -1 A)
+  (T' : IsTrunc (-1) A)
   : FMG X -> A.
 Proof.
   srapply (@FMG_rec_to_set A e' iota' m');
@@ -397,6 +397,21 @@ Arguments T_FMG {X} _ _ _ _ _ _.
 
 Definition FMG_MG (X : Type) {T_X : IsHSet X} : MonoidalGroupoid
   := Build_MonoidalGroupoid (FMG X) T_FMG e m alpha lambda rho pentagon triangle.
+
+Lemma FMG_rec_MonoidalFunctor (X : Type) (T_X : IsHSet X)
+  (M : MonoidalGroupoid) (iota' : X -> M)
+  : MonoidalFunctor (FMG_MG X) M.
+Proof.
+  srefine (let fmgrec := (FMG_rec X M mg_e iota' mg_m mg_alpha mg_lambda mg_rho mg_pentagon mg_triangle mgtrunc) in
+    @Build_MonoidalFunctor (FMG_MG X) M fmgrec _ _ _ _ _);
+  try constructor;
+  intros; simpl;
+  refine (_ @ (concat_1p _)^).
+  + refine (concat_p1 _ @ _).
+    exact (FMG_rec_beta_alpha X M mg_e iota' mg_m mg_alpha mg_lambda mg_rho mg_pentagon mg_triangle mgtrunc a b c)^.
+  + exact (FMG_rec_beta_lambda X M mg_e iota' mg_m mg_alpha mg_lambda mg_rho mg_pentagon mg_triangle mgtrunc b)^.
+  + exact (FMG_rec_beta_rho X M mg_e iota' mg_m mg_alpha mg_lambda mg_rho mg_pentagon mg_triangle mgtrunc a)^.
+Defined.
 
 Section Redefinitions.
 
