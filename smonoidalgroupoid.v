@@ -1,5 +1,7 @@
 Require Export hott_lemmas.
 
+Open Scope type.
+
 Section SymMonoidalGroupoids.
 
 Section SymMonoidalStructure.
@@ -385,6 +387,9 @@ Proof.
     generalize (smg_nt a) as p; induction p; generalize (smg_nt b) as q; induction q.
     exact (concat_p1 _ @ (concat_1p _)^).
 Defined.
+
+Definition SymMonoidalEquivalence (M N : SymMonoidalGroupoid) : Type
+  := {F : SymMonoidalFunctor M N & {G : SymMonoidalFunctor N M & (SymMonoidalNatIso (SymMonoidalFunctor_comp G F) (SymMonoidalFunctor_id M)) * (SymMonoidalNatIso (SymMonoidalFunctor_comp F G) (SymMonoidalFunctor_id N))}}.
 
 Section UniversalProperty.
 

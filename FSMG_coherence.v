@@ -464,4 +464,8 @@ Proof.
   exact (equiv_adjointify K J eta_homotopy (fun x => (epsilon_homotopy x)^)).
 Defined.
 
+Definition sym_mon_equiv_FMG_list
+  : SymMonoidalEquivalence (FSMG_SMG X) (slistSMG X)
+  := (K; J; (SymMonoidalNatIso_V _ _ epsilon, eta)).
+
 End Coherence.

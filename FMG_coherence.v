@@ -225,8 +225,13 @@ Proof.
   srefine (equiv_adjointify K J epsilon_homotopy (fun x => (eta_homotopy x)^)).
 Defined.
 
+Definition mon_equiv_FMG_list
+  : MonoidalEquivalence (FMG_MG X) (listMG X)
+  := (K; J; (MonoidalNatIso_V _ _ eta, epsilon)).
 
 
+
+(** This part serves as comparison to previous formalisations **)
 Section comparison_Beylin.
 
 Context `{Funext}. (* already required for N *)
@@ -262,12 +267,6 @@ Definition ev
   : list X -> (list X -> list X) -> list X
   := fun l f => f l.
 
-  Lemma homotopy_square {A B : Type} {f g : A -> B} (h : f == g) {x y : A} (p : x = y)
-    : ap f p @ h y = h x @ ap g p.
-  Proof.
-    induction p; exact (concat_1p _ @ (concat_p1 _)^).
-  Defined.
-
 Lemma evN_K
   : forall (a : FMG X) (l : list X), ev l (N a) = app (K a) l.
 Proof.
@@ -297,7 +296,7 @@ ap (N a) (alpha_list (K_fun b) (K_fun c) l)^ @ (IHa (app (app _ _) l) @ (alpha_l
     refine (concat_p_pp _ _ _ @ _ @ concat_pp_p _ _ _); apply whiskerR.
     refine (whiskerL _ (ap inverse (ap011_1p app (alpha_list _ _ _))) @ _ @ whiskerR (ap_V _ _)^ _);
     apply moveL_Vp; refine (concat_p_pp _ _ _ @ _); apply moveR_pV.
-    exact (homotopy_square IHa (alpha_list _ _ _)).
+    exact (homotopy_square IHa (alpha_list _ _ _))^.
   + intros b IHb l; simpl.
     refine (whiskerR (concat_p1 _ @ concat_p1 _ @ ap_idmap _) _ @ _).
     refine (_ @ concat_p1 _ @ (concat_1p _)^ @ whiskerR (ap (ap (ev l)) (N_beta_lambda b)^ @ (ap_compose N (ev l) (lambda b))^) _); apply whiskerL.
