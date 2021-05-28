@@ -242,8 +242,74 @@ Proof.
   induction p; constructor.
 Defined.
 
+(**) Lemma ap011_1pp
+  {x : A} {y y' y'' : B}
+  (p : y = y') (p' : y' = y'')
+  : ap011 f (idpath x) (p @ p') = ap011 f 1 p @ ap011 f 1 p'.
+Proof.
+  induction p, p'; constructor.
+Defined.
+
+(**) Lemma ap011_pp1
+  {x x' x'' : A} {y : B}
+  (p : x = x') (p' : x' = x'')
+  : ap011 f (p @ p') (idpath y) = ap011 f p 1 @ ap011 f p' 1.
+Proof.
+  induction p, p'; constructor.
+Defined.
+
 End ap_multiple_variables.
 
+
+(** About paths in Sigma-types **)
+Section sigma.
+
+Lemma path_sigma'_concat (* formerly path2_sigma' *)
+  {A : Type} (P : A -> Type)
+  {x x' x'' : A} {y : P x} {y' : P x'} {y'' : P x''}
+  (p : x = x') (p' : x' = x'') (q : p # y = y') (q' : p' # y' = y'')
+  : path_sigma' P p q @ path_sigma' P p' q' = path_sigma' P (p @ p') (concat_D q q').
+Proof.
+  induction p, p', q, q'; constructor.
+Defined.
+
+Lemma sigma_truncfib
+  {A : Type} (P : A -> Type)
+  {x x' : A} {y : P x} {y' : P x'}
+  (T : forall a : A, IsHProp (P a))
+  (p : x = x')
+  : (x; y) = (x'; y').
+Proof.
+  refine (path_sigma' _ p _).
+  apply path_ishprop.
+Defined.
+
+Lemma sigma_truncfib_concat
+  {A : Type} (P : A -> Type)
+  {x x' x'' : A} {y : P x} {y' : P x'} {y'' : P x''}
+  (T : forall a : A, IsHProp (P a))
+  (p : x = x') (p' : x' = x'')
+  : @sigma_truncfib A P _ _ y y' T p @ @sigma_truncfib A P _ _ y' y'' T p'
+    = @sigma_truncfib A P _ _ y y'' T (p @ p').
+Proof.
+  unfold sigma_truncfib; simpl.
+  refine (path_sigma'_concat P p p' _ _ @ _).
+  apply ap. srapply @path_ishprop.
+Defined.
+
+Lemma sigma_truncfib_1
+  {A : Type} (P : A -> Type)
+  {x : A} (y : P x)
+  (T : forall a : A, IsHProp (P a))
+  (p : x = x) (r : p = idpath)
+  : @sigma_truncfib A P x x y y T p = idpath.
+Proof.
+  rewrite r.
+  change (path_sigma' P idpath (path_ishprop (transport P 1 y) y) = path_sigma' P idpath idpath).
+  apply ap. srapply @path_ishprop.
+Defined.
+
+End sigma.
 
 (** About function extensionality (used for symmetric monoidality) **)
 Section funext_algebra.
@@ -313,3 +379,100 @@ Proof.
 Defined.
 
 End funext_algebra.
+
+(** On connectedness **)
+Section connectedness.
+
+Context `{Univalence}.
+
+Definition path_connected
+  (A : Type) {C : Contr (Trunc 0 A)} (x y : A)
+  : merely (x = y).
+Proof.
+  refine ((equiv_path_Tr x y)^-1 (path_contr (tr x) (tr y))).
+Defined.
+
+Lemma conn_to_prop {A : Type} {C : Contr (Trunc 0 A)}
+  (P : A -> Type) (T : forall a : A, IsHProp (P a))
+  : forall a0 : A, P a0 -> forall a : A, P a.
+Proof.
+  intros a0 y a.
+  set (p := path_connected A a0 a).
+  generalize p; clear p. srapply @Trunc_rec; intro p.
+  exact (transport P p y).
+Defined.
+
+Lemma conn_to_prop_at_point {A : Type} {C : Contr (Trunc 0 A)}
+  (P : A -> Type) (T : forall a : A, IsHProp (P a))
+  (a0 : A) (a0' : P a0)
+  : @conn_to_prop A C P T a0 a0' a0 = a0'.
+Proof.
+  srapply @path_ishprop.
+Defined.
+
+End connectedness.
+
+(** About paths in the universe and truncation of types **)
+Section universe.
+Context `{Univalence}.
+
+Lemma equiv_idmap_sum
+  (A B : Type)
+  : equiv_idmap A +E equiv_idmap B = equiv_idmap (A + B).
+Proof.
+  apply path_equiv. apply path_forall.
+  intros [a|b]; constructor.
+Defined.
+
+Lemma ap011_path_universe_uncurried_sum
+  {A A' B B' : Type} (e : A <~> A') (f : B <~> B')
+  : ap011 (fun X Y : Type => (X + Y)%type) (path_universe_uncurried e) (path_universe_uncurried f) = path_universe_uncurried (e +E f).
+  Proof.
+    srefine (@equiv_induction _ A (fun A' e => ap011 (fun X Y : Type => (X + Y)%type) (path_universe_uncurried e) (path_universe_uncurried f) = path_universe_uncurried (e +E f)) _ A' e); simpl.
+    srefine (@equiv_induction _ B (fun B' f => ap011 (fun X Y : Type => (X + Y)%type) (path_universe_uncurried 1) (path_universe_uncurried f) = path_universe_uncurried (1 +E f)) _ B' f); simpl.
+    change (ap011 (fun X Y : Type => (X + Y)%type) (path_universe (equiv_idmap A)) (path_universe (equiv_idmap B)) = path_universe_uncurried (equiv_idmap A +E equiv_idmap B)).
+    refine (ap011 (ap011 (fun X Y : Type => (X + Y)%type)) path_universe_1 path_universe_1 @ _); simpl.
+    change (idpath = path_universe (equiv_idmap A +E equiv_idmap B)).
+    refine (path_universe_1^ @ _).
+    change (path_universe_uncurried (equiv_idmap (A + B)) = path_universe_uncurried (equiv_idmap A +E equiv_idmap B)).
+    apply ap. symmetry. apply equiv_idmap_sum.
+Defined.
+
+Lemma ap011_path_universe_uncurried_sum_e1
+  {A A' B : Type} (e : A <~> A')
+  : ap011 (fun X Y : Type => (X + Y)%type) (path_universe_uncurried e) idpath = path_universe_uncurried (e +E equiv_idmap B).
+  Proof.
+    refine (ap (ap011 (fun X Y : Type => (X + Y)%type) (path_universe_uncurried e)) path_universe_1^ @ _).
+    apply ap011_path_universe_uncurried_sum.
+Defined.
+
+Lemma ap011_path_universe_uncurried_sum_1e
+  {A B B' : Type} (f : B <~> B')
+  : ap011 (fun X Y : Type => (X + Y)%type) idpath (path_universe_uncurried f) = path_universe_uncurried (equiv_idmap A +E f).
+  Proof.
+    refine (ap (fun z => ap011 (fun X Y : Type => (X + Y)%type) z (path_universe_uncurried f)) path_universe_1^ @ _).
+    apply ap011_path_universe_uncurried_sum.
+Defined.
+
+Definition trunc_sigma'
+  {A : Type} {B : A -> Type} {n : trunc_index}
+  {TB : forall a : A, IsTrunc n.+1 (B a)}
+  {Ts : forall p q : sig B, IsTrunc n (p.1 = q.1)}
+  : IsTrunc n.+1 (sig B).
+Proof.
+  intros x y.
+  enough (Tp : (IsTrunc n {p : x.1 = y.1 & transport B p x.2 = y.2})).
+  { revert Tp. srapply @trunc_equiv'.
+  exact (Build_Equiv _ _ (path_sigma_uncurried B x y) _). }
+  srapply @trunc_sigma.
+Defined.
+
+Definition hset_Finite
+  (A : Type)
+  : Finite A -> IsHSet A.
+Proof.
+  intros [n t]; revert t; srapply @Trunc_rec; intro e.
+  exact (@trunc_equiv' (Fin n) A e^-1 0 _).
+Defined.
+
+End universe.
