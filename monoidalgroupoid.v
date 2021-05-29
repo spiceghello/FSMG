@@ -360,8 +360,228 @@ Class IsFreeFunctor (F : forall X : Type, IsHSet X -> MonoidalGroupoid) := {
 
 End UniversalProperty.
 
+
+(** If a monoidal functor determines an equivalence, then it determines a monoidal equivalence **)
+Section Inverse.
+
+Context (M N : MonoidalGroupoid) (F : MonoidalFunctor M N) (equiv: IsEquiv F).
+Let G := F^-1.
+Let h := eissect F : Sect F G.
+Let k := eisretr F : Sect G F.
+Let d := eisadj F : forall m : M, k (F m) = ap F (h m).
+Let d' := eisadj F^-1 : forall n : N, h (G n) = ap G (k n).
+
+  Lemma MonoidalFunctor_equiv_inverse_G0
+    : mg_e = G mg_e.
+  Proof.
+    exact ((h mg_e)^ @ ap G mg_f0^).
+  Defined.
+  Let G0 := MonoidalFunctor_equiv_inverse_G0.
+
+  Lemma MonoidalFunctor_equiv_inverse_G2
+    : forall a b : N, mg_m (G a) (G b) = G (mg_m a b).
+  Proof.
+    intros. exact ((h _)^ @ ap G (mg_f2 _ _)^ @ ap G (mg_mm (k _) (k _))).
+  Defined.
+  Let G2 := MonoidalFunctor_equiv_inverse_G2.
+
+  Lemma MonoidalFunctor_equiv_inverse_Galpha
+    : forall a b c : N, mg_alpha (G a) (G b) (G c) @ (mg_mm 1 (G2 b c) @ G2 a (mg_m b c)) = (mg_mm (G2 a b) 1 @ G2 (mg_m a b) c) @ ap G (mg_alpha a b c).
+  Proof.
+    intros.
+    refine (whiskerR ((ap_idmap _)^ @ moveL_Vp _ _ _ (homotopy_square h (mg_alpha _ _ _))) _ @ concat_pp_p _ _ _ @ _); (* 10 *)
+    apply moveR_Vp.
+    refine (_ @ concat_p_pp _ _ _ @ whiskerR (moveR_Vp _ _ _ (homotopy_square h (mg_mm (h (mg_m (G a) (G b))) (h (G c))))) _); (* 5 *)
+    apply moveL_Vp;
+    repeat rewrite ap_idmap; repeat rewrite (ap_compose F G).
+    repeat rewrite concat_pp_p. refine (whiskerR (ap (ap G) (moveL_Vp _ _ _ (homotopy_square_2 F mg_m mg_m mg_f2 (h (mg_m (G a) (G b))) (h (G c))))) _ @ _); (* 9 *)
+    repeat rewrite <- d; repeat rewrite ap_pp; repeat rewrite concat_pp_p.
+    apply moveL_Mp.
+    refine (concat_p_pp _ _ _ @ concat_p_pp _ _ _ @ _).
+    change (G2 (F (mg_m (G a) (G b))) (F (G c)) @ (ap G (mg_f2 (mg_m (G a) (G b)) (G c)) @ (ap G (ap F (mg_alpha (G a) (G b) (G c))) @ (h (mg_m (G a) (mg_m (G b) (G c))) @ (mg_mm 1 (G2 b c) @ G2 a (mg_m b c))))) = mg_mm (h (mg_m (G a) (G b))) (h (G c)) @ (mg_mm (G2 a b) 1 @ ((h (mg_m (G (mg_m a b)) (G c)))^ @ (ap G (mg_f2 (G (mg_m a b)) (G c))^ @ (ap G (mg_mm (k (mg_m a b)) (k c)) @ ap G (mg_alpha a b c)))))). (* 6 *)
+    refine (whiskerR (moveR_Vp _ _ _ (homotopy_square_2 G mg_m mg_m G2 (mg_f2 (G a) (G b)) (idpath (F (G c)))))^ _ @ concat_pp_p _ _ _ @ _); (* 8 *)
+    apply moveR_Vp; refine (concat_pp_p _ _ _ @ _).
+    refine (_ @ concat_p_pp _ _ _ @ concat_p_pp _ _ _ @ whiskerR (moveL_pV _ _ _ (ap011_p11q mg_m (ap G (mg_f2 (G a) (G b))) (h (G c)) @ (ap011_1qp1 mg_m (ap G (mg_f2 (G a) (G b))) (h (G c)))^))^ _). (* 3 *)
+    refine (_ @ whiskerL _ (whiskerL _ (whiskerR (moveL_Vp _ _ _ (ap011_1qp1 mg_m (h (mg_m (G a) (G b))) (h (G c)))) _ @ concat_pp_p _ _ _))). (* 2 *)
+    refine (_ @ concat_p_pp _ _ _ @ whiskerR (moveL_pV _ _ _ (ap011_1qp1 mg_m (ap G (mg_mm (k a) (k b))) (h (G c))))^ _). (* 4 *)
+    refine (_ @ whiskerL _ (whiskerR ((ap011_VV mg_m (G2 a b) idpath)^ @ ap (fun z => ap011 mg_m z idpath) (ap inverse (whiskerR (whiskerL _ (ap_V G _)) _ @ concat_pp_p _ _ _ @ whiskerL _ (whiskerL _ (inv_V _)^ @ (inv_pp _ _)^)) @ inv_VV _ _) @ ap011_pp1 mg_m _ (h (mg_m (G a) (G b))) @ whiskerR (ap011_pp1 mg_m (ap G (mg_mm (k a) (k b)))^ (ap G (mg_f2 (G a) (G b))) @ whiskerR (ap011_VV mg_m (ap G (mg_mm (k a) (k b))) idpath) _) _) _ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _)); (* 1 *)
+    refine (_ @ whiskerL _ ((concat_1p _)^ @ whiskerR (concat_Vp _)^ _ @ concat_pp_p _ _ _)).
+    refine (_ @ whiskerL _ (concat_pp_p _ _ _ @ concat_pp_p _ _ _));
+    refine (_ @ concat_pp_p _ _ _ @ whiskerR (ap (ap011 mg_m _) (d' _)^) _);
+    refine (_ @ concat_p_pp _ _ _ @ whiskerR (homotopy_square_2 G mg_m mg_m G2 (mg_mm (k a) (k b)) (k c)) _); (* 7 *)
+    apply whiskerL.
+    refine (_ @ (ap_pp G _ _)^ @ ap (ap G) (alpha_natural (k a) (k b) (k c)) @ ap_pp G _ _). (* 12 *)
+    refine (concat_p_pp _ _ _ @ whiskerR (ap_pp G _ _)^ _ @ concat_p_pp _ _ _ @ whiskerR ((ap_pp G _ _)^ @ ap (ap G) (mg_dalpha (G a) (G b) (G c))^ @ ap_pp G _ _ @ whiskerL _ (ap_pp G _ _)) _ @ concat_pp_p _ _ _ @ whiskerL _ (concat_pp_p _ _ _) @ _); (* 11 *)
+    apply whiskerL.
+    srapply (cancelL (G2 _ _) _ _);
+    refine (whiskerL _ (whiskerL _ (whiskerL _ (concat_p_pp _ _ _) @ concat_p_pp _ _ _) @ concat_p_pp _ _ _) @ concat_p_pp _ _ _ @ _ @ (homotopy_square_2 G mg_m mg_m G2 (k a) (mg_mm (k b) (k c)))^); (* 7' *)
+    apply whiskerR.
+    refine (concat_p_pp _ _ _ @ whiskerR (homotopy_square_2 G mg_m mg_m G2 (idpath (F (G a))) (mg_f2 (G b) (G c))) _ @ concat_pp_p _ _ _ @ _). (* 8' *)
+    refine (whiskerR (moveL_pV _ _ _ (ap011_1qp1 mg_m (h _) (ap G (mg_f2 (G b) (G c))) @ (ap011_p11q mg_m (h _) (ap G (mg_f2 (G b) (G c))))^)) _ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _ @ _). (* 3' *)
+    refine (_ @ ap011_p11q mg_m (h (G a)) (ap G (mg_mm (k b) (k c))) @ ap (fun z => ap011 mg_m z _) (d' a)); (* 4' *)
+    apply whiskerL.
+    refine (whiskerL _ (whiskerR (moveR_pV _ _ _ (moveL_Vp _ _ _ (ap011_p11q mg_m (h _) (h _))))^ _ @ concat_pp_p _ _ _) @ _). (* 2' *)
+    apply moveR_Mp;
+    refine (_ @ ap011_1pp mg_m _ _ @ whiskerR (ap (ap011 mg_m idpath) (ap_V G _) @ ap011_VV mg_m idpath _) _);
+    apply moveR_Mp;
+    refine (_ @ ap (ap011 mg_m idpath) (concat_pp_p _ _ _) @ ap011_1pp mg_m _ _ @ whiskerR (ap011_VV mg_m idpath _) _); (* 1' *)
+    refine (whiskerL _ (whiskerL _ (concat_p_pp _ _ _) @ concat_p_pp _ _ _) @ concat_p_pp _ _ _ @ _ @ concat_1p _);
+    apply whiskerR;
+    apply moveR_Vp; refine (_ @ (concat_p1 _)^).
+    refine (_ @ ((ap_idmap _)^ @ moveL_Vp _ _ _ (homotopy_square h (mg_mm (h _) (h _))))^); (* 5' *)
+    apply moveL_Vp;
+    refine (concat_p_pp _ _ _ @ concat_p_pp _ _ _ @ _);
+    apply whiskerR.
+    unfold G2, MonoidalFunctor_equiv_inverse_G2;
+    refine (whiskerR (concat_p_pp _ _ _ @ whiskerR (concat_p_pp _ _ _ @ whiskerR (concat_pV _) _ @ concat_1p _) _) _ @ concat_pp_p _ _ _ @ whiskerR (ap_V G _) _ @ _); (* 6' *)
+    apply moveR_Vp.
+    rewrite (ap_compose F G); repeat rewrite <- ap_pp; apply ap.
+    refine (_ @ (homotopy_square_2 F mg_m mg_m mg_f2 (h _) (h _))^); apply whiskerR; repeat rewrite d; constructor.
+  Qed.
+
+  Lemma MonoidalFunctor_equiv_inverse_Glambda
+    : forall b : N, mg_lambda (G b) = (mg_mm G0 1 @ G2 mg_e b) @ ap G (mg_lambda b).
+  Proof.
+    intros.
+    refine ((ap_idmap _)^ @ moveL_Vp _ _ _ (homotopy_square h (mg_lambda (G b))) @ _); (* 1 *)
+    apply moveR_Vp; apply moveR_pM.
+    refine (ap_compose F G _ @ ap (ap G) ((moveR_Vp _ _ _ (mg_dlambda (G b)))^ @ whiskerR (inv_pp _ _) _) @ ap_pp G _ _ @ whiskerR (ap_pp G _ _) _ @ concat_pp_p _ _ _ @ _);  (* 9 *)
+    repeat rewrite ap_V;
+    apply moveR_Vp; apply moveR_Vp.
+    refine (_ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _); apply moveL_pV;
+    refine (whiskerL _ (d' _) @ (ap_pp G _ _)^ @ ap (ap G) (lambda_natural (k b)) @ ap_pp G _ _ @ _ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _); (* 10 *)
+    apply whiskerR.
+    refine (moveL_Vp _ _ _ (homotopy_square_2 G mg_m mg_m G2 idpath (k b)) @ _); (* 11 *)
+    apply moveR_Vp;
+    refine (_ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _);
+    apply whiskerR;
+    refine (ap (mg_mm idpath) (d' b)^ @ _).
+    srapply (cancelL (mg_mm G0 idpath) _ _ _);
+    srefine (_ @ concat_pp_p _ _ _);
+    refine (ap011_p11q mg_m G0 (h (G b)) @ (ap011_1qp1 mg_m G0 (h (G b)))^ @ _); (* 6 *)
+    apply whiskerR.
+    unfold G0, MonoidalFunctor_equiv_inverse_G0;
+    refine (_ @ concat_p_pp _ _ _ @ whiskerR (concat2 (ap011_VV mg_m (h mg_e) idpath)^ ((ap011_VV mg_m (ap G mg_f0) idpath)^ @ ap (fun z => ap011 mg_m z idpath) (ap_V G _)^) @ (ap011_pp1 _ _ _)^) _); (* 7 *)
+    apply moveL_Vp; apply moveL_Vp.
+    refine (whiskerR (moveR_pV _ _ _ (homotopy_square_2 G mg_m mg_m G2 mg_f0 idpath))^ _ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _ @ _); (* 8 *)
+    apply whiskerL; refine (_ @ concat_p_pp _ _ _); apply whiskerL;
+    apply moveR_Vp.
+    refine (ap011_p11q mg_m (h mg_e) (h (G b)) @ _). (* 2 *)
+    unfold G2, MonoidalFunctor_equiv_inverse_G2;
+    refine (_ @ concat_p_pp _ _ _ @ concat_p_pp _ _ _);
+    apply moveL_Vp;
+    refine (_ @ whiskerR (ap_V G _)^ _);
+    apply moveL_Vp. (* 4 *)
+    refine (_ @ concat_p_pp _ _ _ @ whiskerR ((ap_pp G _ _)^ @ ap (ap G) (homotopy_square_2 F mg_m mg_m mg_f2 (h mg_e) (h (G b)) @ whiskerR (ap011 (ap011 mg_m) (d _)^ (d _)^) _) @ ap_pp G _ _) _ @ concat_pp_p _ _ _); (* 5 *)
+    apply whiskerL.
+    refine (whiskerL _ (ap_idmap _)^ @ homotopy_square h (ap011 mg_m (h mg_e) (h (G b))) @ _); (* 3 *)
+    apply whiskerR; apply ap_compose.
+  Qed.
+
+  Lemma MonoidalFunctor_equiv_inverse_Grho
+    : forall a : N, mg_rho (G a) = (mg_mm 1 G0 @ G2 a mg_e) @ ap G (mg_rho a).
+  Proof.
+    intros.
+    refine ((ap_idmap _)^ @ moveL_Vp _ _ _ (homotopy_square h (mg_rho (G a))) @ _); (* 1 *)
+    apply moveR_Vp; apply moveR_pM.
+    refine (ap_compose F G _ @ ap (ap G) ((moveR_Vp _ _ _ (mg_drho (G a)))^ @ whiskerR (inv_pp _ _) _) @ ap_pp G _ _ @ whiskerR (ap_pp G _ _) _ @ concat_pp_p _ _ _ @ _);  (* 9 *)
+    repeat rewrite ap_V;
+    apply moveR_Vp; apply moveR_Vp.
+    refine (_ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _); apply moveL_pV;
+    refine (whiskerL _ (d' _) @ (ap_pp G _ _)^ @ ap (ap G) (rho_natural (k a)) @ ap_pp G _ _ @ _ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _); (* 10 *)
+    apply whiskerR.
+    refine (moveL_Vp _ _ _ (homotopy_square_2 G mg_m mg_m G2 (k a) idpath) @ _); (* 11 *)
+    apply moveR_Vp;
+    refine (_ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _);
+    apply whiskerR;
+    refine (ap (fun z => mg_mm z idpath) (d' a)^ @ _).
+    srapply (cancelL (mg_mm idpath G0) _ _ _);
+    srefine (_ @ concat_pp_p _ _ _);
+    refine (ap011_1qp1 mg_m (h (G a)) G0 @ (ap011_p11q mg_m (h (G a)) G0)^ @ _); (* 6 *)
+    apply whiskerR.
+    unfold G0, MonoidalFunctor_equiv_inverse_G0;
+    refine (_ @ concat_p_pp _ _ _ @ whiskerR (concat2 (ap011_VV mg_m idpath (h mg_e))^ ((ap011_VV mg_m idpath (ap G mg_f0))^ @ ap (ap011 mg_m idpath) (ap_V G _)^) @ (ap011_1pp _ _ _)^) _); (* 7 *)
+    apply moveL_Vp; apply moveL_Vp.
+    refine (whiskerR (moveR_pV _ _ _ (homotopy_square_2 G mg_m mg_m G2 idpath mg_f0))^ _ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _ @ _); (* 8 *)
+    apply whiskerL; refine (_ @ concat_p_pp _ _ _); apply whiskerL;
+    apply moveR_Vp.
+    refine (ap011_1qp1 mg_m (h (G a)) (h mg_e) @ _). (* 2 *)
+    unfold G2, MonoidalFunctor_equiv_inverse_G2;
+    refine (_ @ concat_p_pp _ _ _ @ concat_p_pp _ _ _);
+    apply moveL_Vp;
+    refine (_ @ whiskerR (ap_V G _)^ _);
+    apply moveL_Vp. (* 4 *)
+    refine (_ @ concat_p_pp _ _ _ @ whiskerR ((ap_pp G _ _)^ @ ap (ap G) (homotopy_square_2 F mg_m mg_m mg_f2 (h (G a)) (h mg_e) @ whiskerR (ap011 (ap011 mg_m) (d _)^ (d _)^) _) @ ap_pp G _ _) _ @ concat_pp_p _ _ _); (* 5 *)
+    apply whiskerL.
+    refine (whiskerL _ (ap_idmap _)^ @ homotopy_square h (ap011 mg_m (h (G a)) (h mg_e)) @ _); (* 3 *)
+    apply whiskerR; apply ap_compose.
+  Qed.
+
+Lemma MonoidalFunctor_equiv_inverse
+  : MonoidalFunctor N M.
+Proof.
+  srapply @Build_MonoidalFunctor.
+  + exact G.
+  + exact G0.
+  + exact G2.
+  + exact MonoidalFunctor_equiv_inverse_Galpha.
+  + exact MonoidalFunctor_equiv_inverse_Glambda.
+  + exact MonoidalFunctor_equiv_inverse_Grho.
+Defined.
+
+Lemma MonoidalFunctor_equiv_inverse_Sect
+  : MonoidalNatIso (MonoidalFunctor_comp MonoidalFunctor_equiv_inverse F) (MonoidalFunctor_id M).
+Proof.
+  srapply @Build_MonoidalNatIso; simpl.
+  + exact h.
+  + unfold G0, MonoidalFunctor_equiv_inverse_G0.
+    refine (concat_pp_p _ _ _ @ concat_pp_p _ _ _ @ _); apply moveR_Vp.
+    refine (whiskerR (ap_V G _) _ @ _ @ (concat_p1 _)^); apply moveR_Vp; constructor.
+  + intros; unfold G2, MonoidalFunctor_equiv_inverse_G2.
+    refine (concat_pp_p _ _ _ @ concat_pp_p _ _ _ @ concat_pp_p _ _ _ @ _ @ (concat_p1 _)^);
+    apply moveR_Vp.
+    refine (whiskerR (ap_V G _) _ @ _);
+    apply moveR_Vp.
+    refine (concat_p_pp _ _ _ @ whiskerR ((ap_pp G _ _)^ @ ap (ap G) (whiskerR (ap011 mg_mm (d _) (d _)) _ @ (homotopy_square_2 F mg_m mg_m mg_f2 (h a) (h b))^) @ ap_pp G _ _) _ @ concat_pp_p _ _ _ @ _);
+    apply whiskerL.
+    refine (whiskerR (ap_compose _ _ _)^ _ @ _).
+    refine ((homotopy_square h (ap011 mg_m (h a) (h b)))^ @ _);
+    apply whiskerL; apply ap_idmap.
+Defined.
+
+Lemma MonoidalFunctor_equiv_inverse_Retr
+  : MonoidalNatIso (MonoidalFunctor_comp F MonoidalFunctor_equiv_inverse) (MonoidalFunctor_id N).
+Proof.
+  srapply @Build_MonoidalNatIso; simpl.
+  + exact k.
+  + unfold G0, MonoidalFunctor_equiv_inverse_G0.
+    refine (whiskerR (whiskerL _ (ap_pp F _ _ @ whiskerL _ (ap_compose _ _ _)^) @ concat_p_pp _ _ _) _ @ concat_pp_p _ _ _ @ _).
+    refine (whiskerL _ ((homotopy_square k mg_f0^)^ @ whiskerL _ (ap_idmap _)) @ concat_p_pp _ _ _ @ _); apply moveR_pV.
+    refine (concat_pp_p _ _ _ @ _ @ concat_p1 _ @ (concat_1p _)^); apply whiskerL.
+    refine (whiskerR (ap_V F _) _ @ _); apply moveR_Vp; refine (_ @ (concat_p1 _)^).
+    apply d.
+  + intros; unfold G2, MonoidalFunctor_equiv_inverse_G2.
+    repeat rewrite (ap_pp F _ _).
+    refine (whiskerR (concat_p_pp _ _ _) _ @ concat_pp_p _ _ _ @ whiskerL _ (whiskerR (ap_compose _ _ _)^ _) @ _ @ (concat_p1 _)^).
+    refine (whiskerL _ ((homotopy_square k (mg_mm (k a) (k b)))^ @ whiskerL _ (ap_idmap _)) @ concat_p_pp _ _ _ @ _ @ (concat_1p _)); apply whiskerR.
+    repeat rewrite ap_V.
+    repeat rewrite <- d.
+    refine (concat_pp_p _ _ _ @ _); apply moveR_Mp.
+    refine (concat_pp_p _ _ _ @ _ @ (concat_p1 _)^); apply moveR_Vp.
+    repeat rewrite <- ap_V.
+    repeat rewrite <- ap_compose.
+    refine ((homotopy_square k (mg_f2 (G a) (G b))^)^ @ _); apply whiskerL; apply ap_idmap.
+Qed.
+
+Lemma MonoidalEquivalence_from_equivalence
+  : MonoidalEquivalence M N.
+Proof.
+  exists F.
+  exists MonoidalFunctor_equiv_inverse.
+  exact (MonoidalFunctor_equiv_inverse_Sect, MonoidalFunctor_equiv_inverse_Retr).
+Defined.
+
+End Inverse.
+
 End MonoidalGroupoids.
-
-
-
  

@@ -25,6 +25,16 @@ Proof.
   induction p; exact (concat_p1 _ @ (concat_1p _)^).
 Defined.
 
+Lemma homotopy_square_2
+  {A B} (f : A -> B)
+  (m : A -> A -> A) (m' : B -> B -> B)
+  (h2 : forall a a' : A, m' (f a) (f a') = f (m a a'))
+  {x x' y y' : A} (p : x = x') (q : y = y')
+  : h2 x y @ ap f (ap011 m p q) = ap011 m' (ap f p) (ap f q) @ h2 x' y'.
+Proof.
+  induction p, q; exact (concat_p1 _ @ (concat_1p _)^).
+Defined.
+
 End path_algebra.
 
 
@@ -398,6 +408,16 @@ End ap_multiple_variables.
 (** About functions and paths in Sigma-types **)
 Section sigma.
 
+Lemma path_sigma'_ap'
+  {A : Type} (P : A -> Type) {A' : Type} (P' : A' -> Type)
+  (F1 : A -> A') (F2 : forall a : A, P a -> P' (F1 a))
+  {x x' : A} {y : P x} {y' : P x'} (p : x = x') (p' : transport P p y = y')
+  : ap (fun z : {a : A & P a} => (F1 z.1; F2 z.1 z.2)) (path_sigma' P p p')
+    = path_sigma' P' (ap F1 p) (transport_ap' F1 F2 p p').
+Proof.
+  induction p, p'; constructor.
+Defined.
+
 Lemma path_sigma'_ap'_p
   {A : Type} (P : A -> Type) {A' : Type} (P' : A' -> Type)
   (F1 : A -> A') (F2 : forall a : A, P a -> P' (F1 a))
@@ -483,6 +503,20 @@ Proof.
   srapply @path_sigma'_ap'_p.
 Defined.
 
+Lemma ap_sigma_function_path_sigma_function
+  {A : Type} {P : A -> Type} {A' : Type} {P' : A' -> Type}
+  {B : Type} {Q : B -> Type}
+  (F1 : A -> A') (F2 : forall a : A, P a -> P' (F1 a))
+  (G1 : A' -> B) (G2 : forall a' : A', P' a' -> Q (G1 a'))
+  {x x' : A} {y : P x} {y' : P x'}
+  (p : F1 x = F1 x') (q : transport P' p (F2 x y) = F2 x' y')
+  : ap (sigma_function G1 G2) (path_sigma_function F1 F2 p q)
+    = path_sigma_function (G1 o F1) (fun z w => G2 (F1 z) (F2 z w)) (ap G1 p) (transport_ap' G1 G2 p q).
+Proof.
+  change (ap (fun z : {a' : A' & P' a'} => (G1 z.1; G2 z.1 z.2)) (path_sigma' P' p q) = path_sigma' Q (ap G1 p) (transport_ap' G1 G2 p q)).
+  srapply @path_sigma'_ap'.
+Defined.
+
 Lemma ap_sigma_function_path_sigma'_1
   {A} (P : A -> Type) {A'} (P' : A' -> Type)
   (F1 : A -> A') (F2 : forall a : A, P a -> P' (F1 a))
@@ -506,6 +540,21 @@ Proof.
   srefine (path_sigma' _ r _).
   refine (@transport_paths_Fl (x = x) _ (fun z => transport P z y) p idpath y r _ @ _).
   apply moveR_Vp; refine (s^ @ (concat_p1 _)^).
+Defined.
+
+Lemma ap_to_fiber_path_sigma'_1 {A : Type} (B : A -> Type)
+  {x : A} {y y' : B x} (p : y = y')
+  : ap (fun b : B x => (x; b)) p = path_sigma' B idpath p.
+Proof.
+  induction p; constructor.
+Defined.
+
+Lemma ap_base_path_sigma'_1 {A : Type} (B : A -> Type) {C : Type}
+  (f : forall a : A, B a -> C)
+  {x : A} {y y' : B x} (q : y = y')
+  : ap (fun z : {a : A & B a} => f z.1 z.2) (path_sigma' B idpath q) = ap (f x) q.
+Proof.
+  induction q; constructor.
 Defined.
 
 Lemma path_sigma'_concat
