@@ -360,7 +360,6 @@ Class IsFreeFunctor (F : forall X : Type, IsHSet X -> MonoidalGroupoid) := {
 
 End UniversalProperty.
 
-
 (** If a monoidal functor determines an equivalence, then it determines a monoidal equivalence **)
 Section Inverse.
 

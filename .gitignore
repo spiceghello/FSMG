@@ -29,4 +29,5 @@ nia.cache
 nlia.cache
 nra.cache
 *.sh
-Project.proj
+*.proj
+*tmp.v

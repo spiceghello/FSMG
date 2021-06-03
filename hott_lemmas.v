@@ -408,6 +408,14 @@ End ap_multiple_variables.
 (** About functions and paths in Sigma-types **)
 Section sigma.
 
+Lemma ap_sigma_ap_fiber {A} (B : A -> Type) {C}
+  (f : sig B -> C)
+  {a : A} {b b' : B a} (p : b = b')
+  : ap f (path_sigma' _ idpath p) = ap (fun z : B a => f (a; z)) p.
+Proof.
+  induction p; constructor.
+Defined.
+
 Lemma path_sigma'_ap'
   {A : Type} (P : A -> Type) {A' : Type} (P' : A' -> Type)
   (F1 : A -> A') (F2 : forall a : A, P a -> P' (F1 a))

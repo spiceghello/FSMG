@@ -363,6 +363,7 @@ Ltac unfold_slist_types
 
 
 (* Part II : definition of the symmetric monoidal product (slist append). *)
+Require Export smonoidalgroupoid.
 
 Section sapp.
 
@@ -424,7 +425,7 @@ End sapp.
 
 Infix "++" := sapp (right associativity, at level 60) : slist_scope.
 
-Section sapp_monoidal_product.
+Section sapp_monoidal_structure.
 
 Open Scope path_scope.
 Open Scope slist_scope.
@@ -613,10 +614,10 @@ Defined.
 
 (* pentagon *)
 Lemma pentagon_slist
-  : forall l1 l2 l3 l4 : slist X,
-      alpha_slist (l1 ++ l2) l3 l4 @ alpha_slist l1 l2 (l3 ++ l4)
-      = (ap011 sapp (alpha_slist l1 l2 l3) 1 @ alpha_slist l1 (l2 ++ l3) l4) @ ap011 sapp 1 (alpha_slist l2 l3 l4).
+  : IsPentagonCoherent sapp alpha_slist.
 Proof.
+  unfold IsPentagonCoherent.
+  change (forall l1 l2 l3 l4 : slist X, alpha_slist (l1 ++ l2) l3 l4 @ alpha_slist l1 l2 (l3 ++ l4) = (ap011 sapp (alpha_slist l1 l2 l3) 1 @ alpha_slist l1 (l2 ++ l3) l4) @ ap011 sapp 1 (alpha_slist l2 l3 l4)).
   intros; revert l1; srapply @slist_ind_to_2paths_in_gpd; hnf.
   + srapply T_slist.
   + simpl. refine (concat_p1 _ @ _ @ (concat_1p _)^).
@@ -633,10 +634,10 @@ Qed.
 
 (* triangle *)
 Lemma triangle_slist
-  : forall l1 l2 : slist X,
-      alpha_slist l1 nil l2 @ ap011 sapp 1 (lambda_slist l2)
-      = ap011 sapp (rho_slist l1) 1.
+  : IsTriangleCoherent nil sapp alpha_slist lambda_slist rho_slist.
 Proof.
+  unfold IsTriangleCoherent.
+  change (forall l1 l2 : slist X, alpha_slist l1 nil l2 @ ap011 sapp 1 (lambda_slist l2) = ap011 sapp (rho_slist l1) 1).
   intros; revert l1; srapply @slist_ind_to_2paths_in_gpd; hnf.
   + srapply T_slist.
   + constructor.
@@ -682,10 +683,10 @@ Proof.
 Qed.
 
 Lemma hexagon_slist
-  : forall l1 l2 l3 : slist X,
-    (alpha_slist l1 l2 l3 @ tau_slist l1 (l2 ++ l3)) @ alpha_slist l2 l3 l1
-    = (ap011 sapp (tau_slist l1 l2) 1 @ alpha_slist l2 l1 l3) @ ap011 sapp 1 (tau_slist l1 l3).
+  : IsHexagonCoherent sapp alpha_slist tau_slist.
 Proof.
+  unfold IsHexagonCoherent.
+  change (forall l1 l2 l3 : slist X, (alpha_slist l1 l2 l3 @ tau_slist l1 (l2 ++ l3)) @ alpha_slist l2 l3 l1 = (ap011 sapp (tau_slist l1 l2) 1 @ alpha_slist l2 l1 l3) @ ap011 sapp 1 (tau_slist l1 l3)).
   intros; revert l2; revert l1; srapply @slist_ind_to_fam_2paths_in_gpd; hnf.
   + srapply T_slist.
   + srapply @slist_ind_to_2paths_in_gpd; hnf.
@@ -715,9 +716,10 @@ Qed.
 
 (* bigon *)
 Lemma bigon_slist
-  : forall l1 l2 : slist X,
-    tau_slist l1 l2 @ tau_slist _ _ = idpath.
+  : IsBigonCoherent sapp tau_slist.
 Proof.
+  unfold IsBigonCoherent.
+  change (forall l1 l2 : slist X, tau_slist l1 l2 @ tau_slist _ _ = idpath).
   srapply @slist_ind_to_fam_2paths_in_gpd; hnf.
   + srapply T_slist.
   + srapply @slist_ind_to_2paths_in_gpd; hnf.
@@ -753,9 +755,7 @@ Proof.
       refine ((ap_pp (cons y) _ _ )^ @ ap (ap (cons y)) (concat_pq_1 hl2)).
 Qed.
 
-End sapp_monoidal_product.
-
-Require Export smonoidalgroupoid.
+End sapp_monoidal_structure.
 
 Definition slistSMG `{Funext} (X : Type)
   : SymMonoidalGroupoid
