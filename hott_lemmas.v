@@ -304,6 +304,15 @@ End transport.
 (** About application of multivariable functions (ap011) **)
 Section ap_multiple_variables.
 
+Lemma ap011_path_prod' {A A' B B' C C' : Type}
+  (f : A -> B -> C) (f' : A' -> B' -> C')
+  {a1 a2 : A} (p : a1 = a2) {a'1 a'2 : A'} (p' : a'1 = a'2)
+  {b1 b2 : B} (q : b1 = b2) {b'1 b'2 : B'} (q' : b'1 = b'2)
+  : ap011 (fun (X : A * A') (Y : B * B') => (f (fst X) (fst Y), f' (snd X) (snd Y))) (path_prod' p p') (path_prod' q q') = path_prod' (ap011 f p q) (ap011 f' p' q').
+Proof.
+  induction p, p', q, q'; constructor.
+Defined.
+
 Context {A B C} (f : A -> B -> C).
 
 Lemma ap011_VV
@@ -644,6 +653,54 @@ Proof.
   srapply @path_sigma_truncfib.
   refine (path_sigma'_pr1 p @ r @ (path_sigma'_pr1 q)^).
 Defined.
+
+Section ap011_m_base_fiber.
+
+Context {A} (B : A -> Type) {A'} (B' : A' -> Type) {A''} (B'' : A'' -> Type).
+
+Lemma transport_ap011
+  (m_base : A -> A' -> A'')
+  (m_fiber : forall (a : A) (a' : A'), B a -> B' a' -> B'' (m_base a a'))
+  {a1 a2 : A} (p : a1 = a2) {b1 : B a1}
+  {a'1 a'2 : A'} (p' : a'1 = a'2) {b'1 : B' a'1}
+  : transport B'' (ap011 m_base p p') (m_fiber a1 a'1 b1 b'1) = m_fiber a2 a'2 (transport B p b1) (transport B' p' b'1).
+Proof.
+  induction p, p'; constructor.
+Defined.
+
+Lemma m_base_fiber
+  (m_base : A -> A' -> A'')
+  (m_fiber : forall (a : A) (a' : A'), B a -> B' a' -> B'' (m_base a a'))
+  : sig B -> sig B' -> sig B''.
+Proof.
+  intros [a b] [a' b'].
+  exact (m_base a a'; m_fiber a a' b b').
+Defined.
+
+Context (m_base : A -> A' -> A'')
+  (m_fiber : forall (a : A) (a' : A'), B a -> B' a' -> B'' (m_base a a')).
+
+Lemma ap011_m_base_fiber
+  {a1 a2 : A} (p : a1 = a2) {b1 : B a1} {b2 : B a2} (q : p # b1 = b2)
+  {a'1 a'2 : A'} (p' : a'1 = a'2) {b'1 : B' a'1} {b'2 : B' a'2} (q' : p' # b'1 = b'2)
+  : ap011 (m_base_fiber m_base m_fiber) (path_sigma' _ p q) (path_sigma' _ p' q') = path_sigma' _ (ap011 m_base p p') (transport_ap011 m_base m_fiber p p' @ ap011 (m_fiber a2 a'2) q q').
+Proof.
+  induction p, p', q, q'; constructor.
+Defined.
+
+Lemma ap011_m_base_fiber_sigma_truncfib
+  (TB : forall a, IsHProp (B a)) (TB' : forall a', IsHProp (B' a')) (TB'' : forall a'', IsHProp (B'' a''))
+  {a1 a2 : A} (p : a1 = a2) {b1 : B a1} {b2 : B a2}
+  {a'1 a'2 : A'} (p' : a'1 = a'2) {b'1 : B' a'1} {b'2 : B' a'2}
+  : ap011 (m_base_fiber m_base m_fiber) (sigma_truncfib B TB p) (sigma_truncfib B' TB' p') = @sigma_truncfib _ B'' (m_base a1 a'1) (m_base a2 a'2) (m_fiber _ _ b1 b'1) (m_fiber _ _ b2 b'2) TB'' (ap011 m_base p p').
+Proof.
+  refine (ap011_m_base_fiber p _ p' _ @ _).
+  induction p, p'; simpl.
+  unfold sigma_truncfib.
+  apply ap. srapply @path_ishprop. 
+Defined.
+
+End ap011_m_base_fiber.
 
 End sigma.
 

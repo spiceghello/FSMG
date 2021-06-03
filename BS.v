@@ -219,15 +219,17 @@ Definition BS_dot'_product
   : BS_dot' -> BS_dot' -> BS_dot'.
 Proof.
   unfold BS_dot', BS.
-  intros [[nA A] tA] [[nB B] tB].
-  srefine ((nA + nB, (A + B)%type); _).
-  simpl in *. exact (fin_coproduct tA tB).
+  srapply m_base_fiber.
+  + intros [nA A] [nB B]. exact (nA + nB, (A + B)%type).
+  + intros ?? tA tB; simpl in *. exact (fin_coproduct tA tB).
 Defined.
 
 
 (** We need a symmetric monoidal structure on nat **)
+Open Scope type.
+Open Scope nat.
 
-  Lemma nat_alp
+  Lemma alpha_nat
     : forall n1 n2 n3 : nat, (n1 + n2) + n3 = n1 + (n2 + n3).
   Proof.
     intros; induction n1; simpl.
@@ -235,13 +237,13 @@ Defined.
     + apply ap; apply IHn1.
   Defined.
 
-  Lemma nat_lam
+  Lemma lambda_nat
     : forall n : nat, 0 + n = n.
   Proof.
     constructor.
   Defined.
 
-  Lemma nat_rho
+  Lemma rho_nat
     : forall n : nat, n + 0 = n.
   Proof.
     induction n; simpl.
@@ -249,7 +251,7 @@ Defined.
     + apply ap; exact IHn.
   Defined.
 
-  Lemma nat_tau
+  Lemma tau_nat
     : forall n1 n2 : nat, n1 + n2 = n2 + n1.
   Proof.
     induction n1; simpl.
@@ -263,50 +265,50 @@ Defined.
         apply ap. exact (IHn1 n2)^.
   Defined.
 
-  Lemma nat_pentagon
-    : forall n1 n2 n3 n4 : nat,
-      ap011 (fun n m => n + m) (nat_alp n1 n2 n3) (idpath n4) @ nat_alp n1 (n2 + n3) n4 @ ap011 (fun n m => n + m) (idpath n1) (nat_alp n2 n3 n4) = nat_alp (n1 + n2) n3 n4 @ nat_alp n1 n2 (n3 + n4).
+  Lemma pentagon_nat
+    : IsPentagonCoherent (fun n m => n + m) alpha_nat.
   Proof.
-    intros. srapply @path_ishprop.
-  Defined.
+    unfold IsPentagonCoherent; intros; srapply @path_ishprop.
+  Qed.
 
-  Lemma nat_triangle
-    : forall n1 n2 : nat,
-      nat_alp _ _ _ @ ap011 (fun n m => n + m) (idpath n1) (nat_lam _) = ap011 (fun n m => n + m) (nat_rho n1) (idpath n2).
+  Lemma triangle_nat
+    : IsTriangleCoherent 0 (fun n m => n + m) alpha_nat lambda_nat rho_nat.
   Proof.
-    intros. srapply @path_ishprop.
-  Defined.
+    unfold IsTriangleCoherent; intros; srapply @path_ishprop.
+  Qed.
 
-  Lemma nat_hexagon
-    : forall n1 n2 n3 : nat,
-      nat_alp n1 n2 n3 @ nat_tau n1 (n2 + n3) @ nat_alp n2 n3 n1 = ap011 (fun n m => n + m) (nat_tau n1 n2) (idpath n3) @ nat_alp _ _ _ @ ap011 (fun n m => n + m) (idpath n2) (nat_tau n1 n3).
+  Lemma hexagon_nat
+    : IsHexagonCoherent (fun n m => n + m) alpha_nat tau_nat.
   Proof.
-    intros. srapply @path_ishprop.
-  Defined.
+    unfold IsHexagonCoherent; intros; srapply @path_ishprop.
+  Qed.
 
-  Lemma nat_bigon
-    : forall n1 n2 : nat,
-      nat_tau n1 n2 @ nat_tau _ _ = idpath.
+  Lemma bigon_nat
+    : IsBigonCoherent (fun n m => n + m) tau_nat.
   Proof.
-    intros. srapply @path_ishprop.
-  Defined.
+    unfold IsBigonCoherent; intros; srapply @path_ishprop.
+  Qed.
 
 (** ... and a symmetric monoidal structure on Type **)
 
-  Lemma coproduct_alp_equiv
+  Definition U_e
+    : Type
+    := Empty.
+
+  Lemma alpha_U_equiv
     : forall A B C : Type, ((A + B) + C)%type <~> (A + (B + C))%type.
   Proof.
     srapply equiv_sum_assoc.
   Defined.
 
-  Lemma coproduct_alp
+  Lemma alpha_U
     : forall A B C : Type, ((A + B) + C)%type = (A + (B + C))%type.
   Proof.
-    intros; srapply @path_universe_uncurried. srapply coproduct_alp_equiv.
+    intros; srapply @path_universe_uncurried. srapply alpha_U_equiv.
   Defined.
 
-  Lemma coproduct_lam_equiv
-    : forall B : Type, (Empty + B)%type <~> B.
+  Lemma lambda_U_equiv
+    : forall B : Type, (U_e + B)%type <~> B.
   Proof.
     intros.
     srapply @equiv_adjointify; hnf.
@@ -316,14 +318,14 @@ Defined.
     + intros [[]|b]; constructor.
   Defined.
 
-  Lemma coproduct_lam
-    : forall B : Type, (Empty + B)%type = B.
+  Lemma lambda_U
+    : forall B : Type, (U_e + B)%type = B.
   Proof.
-    intros; srapply @path_universe_uncurried. srapply coproduct_lam_equiv.
+    intros; srapply @path_universe_uncurried. srapply lambda_U_equiv.
   Defined.
 
-  Lemma coproduct_rho_equiv
-    : forall A : Type, (A + Empty)%type <~> A.
+  Lemma rho_U_equiv
+    : forall A : Type, (A + U_e)%type <~> A.
   Proof.
     intros.
     srapply @equiv_adjointify; hnf.
@@ -333,186 +335,232 @@ Defined.
     + intros [a|[]]; constructor.
   Defined.
 
-  Lemma coproduct_rho
-    : forall A : Type, (A + Empty)%type = A.
+  Lemma rho_U
+    : forall A : Type, (A + U_e)%type = A.
   Proof.
-    intros; srapply @path_universe_uncurried. srapply coproduct_rho_equiv.
+    intros; srapply @path_universe_uncurried. srapply rho_U_equiv.
   Defined.
 
-  Lemma coproduct_tau_equiv
+  Lemma tau_U_equiv
     : forall A B : Type, (A + B)%type <~> (B + A)%type.
   Proof.
     srapply equiv_sum_symm.
   Defined.
 
-  Lemma coproduct_tau
+  Lemma tau_U
     : forall A B : Type, (A + B)%type = (B + A)%type.
   Proof.
-    intros. srapply @path_universe_uncurried. srapply coproduct_tau_equiv.
+    intros. srapply @path_universe_uncurried. srapply tau_U_equiv.
   Defined.
 
-  Lemma coproduct_pentagon_equiv
-    : forall A B C D : Type, (1%equiv +E coproduct_alp_equiv B C D) oE (coproduct_alp_equiv A (B + C) D oE (coproduct_alp_equiv A B C +E 1%equiv)) = coproduct_alp_equiv A B (C + D) oE coproduct_alp_equiv (A + B) C D.
+  Lemma pentagon_U_equiv
+    : forall A B C D : Type, alpha_U_equiv A B (C + D) oE alpha_U_equiv (A + B) C D = (1 +E alpha_U_equiv B C D) oE (alpha_U_equiv A (B + C) D oE (alpha_U_equiv A B C +E 1)).
   Proof.
     intros. apply path_equiv. apply path_forall.
     intros [[[a|b]|c]|d]; constructor.
   Defined.
 
-  Lemma coproduct_pentagon
-    : forall A B C D : Type, (ap011 (fun X Y => (X + Y)%type) (coproduct_alp A B C) idpath @ coproduct_alp A (B + C) D) @ ap011 (fun X Y => (X + Y)%type) idpath (coproduct_alp B C D) = coproduct_alp (A + B) C D @ coproduct_alp A B (C + D).
+  Lemma pentagon_U
+    : IsPentagonCoherent (fun A B => (A + B)%type) alpha_U.
   Proof.
-    intros. unfold coproduct_alp.
-    refine (whiskerR (whiskerR (ap011_path_universe_uncurried_sum_e1 _) _) _ @ whiskerL _ (ap011_path_universe_uncurried_sum_1e _) @ _).
-    change ((path_universe (coproduct_alp_equiv A B C +E 1) @ path_universe (coproduct_alp_equiv A (B + C) D)) @
-path_universe (1 +E coproduct_alp_equiv B C D) = path_universe (coproduct_alp_equiv (A + B) C D) @ path_universe (coproduct_alp_equiv A B (C + D))).
-    refine (whiskerR (path_universe_compose _ _)^ _ @ _).
-    change (path_universe (coproduct_alp_equiv A (B + C) D oE (coproduct_alp_equiv A B C +E 1%equiv)) @
-path_universe (1 +E coproduct_alp_equiv B C D) = path_universe (coproduct_alp_equiv (A + B) C D) @ path_universe (coproduct_alp_equiv A B (C + D))).
+    unfold IsPentagonCoherent; intros A B C D. unfold alpha_U.
+    refine (_ @ whiskerR (whiskerR (ap011_path_universe_uncurried_sum_e1 _)^ _) _ @ whiskerL _ (ap011_path_universe_uncurried_sum_1e _)^).
+    change (path_universe (alpha_U_equiv (A + B) C D) @ path_universe (alpha_U_equiv A B (C + D)) = (path_universe (alpha_U_equiv A B C +E 1) @ path_universe (alpha_U_equiv A (B + C) D)) @
+path_universe (1 +E alpha_U_equiv B C D)).
+    refine (_ @ whiskerR (path_universe_compose _ _) _).
+    change (path_universe (alpha_U_equiv (A + B) C D) @ path_universe (alpha_U_equiv A B (C + D)) = path_universe (alpha_U_equiv A (B + C) D oE (alpha_U_equiv A B C +E 1%equiv)) @ path_universe (1 +E alpha_U_equiv B C D)).
     refine ((path_universe_compose _ _)^ @ _ @ path_universe_compose _ _).
-    change (path_universe_uncurried ((1%equiv +E coproduct_alp_equiv B C D) oE (coproduct_alp_equiv A (B + C) D oE (coproduct_alp_equiv A B C +E 1%equiv))) = path_universe_uncurried (coproduct_alp_equiv A B (C + D) oE coproduct_alp_equiv (A + B) C D)).
+    change (path_universe_uncurried (alpha_U_equiv A B (C + D) oE alpha_U_equiv (A + B) C D) = path_universe_uncurried ((1%equiv +E alpha_U_equiv B C D) oE (alpha_U_equiv A (B + C) D oE (alpha_U_equiv A B C +E 1%equiv)))).
     apply ap.
-    apply coproduct_pentagon_equiv.
+    apply pentagon_U_equiv.
   Defined.
 
-  Lemma coproduct_triangle_equiv
-    : forall A B : Type, (equiv_idmap A +E coproduct_lam_equiv _) oE coproduct_alp_equiv _ _ _ = coproduct_rho_equiv A +E equiv_idmap B.
+  Lemma triangle_U_equiv
+    : forall A B : Type, (equiv_idmap A +E lambda_U_equiv _) oE alpha_U_equiv _ _ _ = rho_U_equiv A +E equiv_idmap B.
   Proof.
     intros. apply path_equiv. apply path_forall.
     intros [[a|[]]|b]; constructor.
   Defined.
 
-  Lemma coproduct_triangle
-    : forall A B : Type, coproduct_alp _ _ _ @ ap011 (fun X Y => (X + Y)%type) (idpath A) (coproduct_lam _) = ap011 (fun X Y => (X + Y)%type) (coproduct_rho A) (idpath B).
+  Lemma triangle_U
+    : IsTriangleCoherent U_e (fun A B => (A + B)%type) alpha_U lambda_U rho_U.
   Proof.
-    intros. unfold coproduct_alp, coproduct_lam, coproduct_rho.
+    unfold IsTriangleCoherent; intros A B. unfold alpha_U, lambda_U, rho_U.
     refine (whiskerL _ (ap011_path_universe_uncurried_sum_1e _) @ _ @ (ap011_path_universe_uncurried_sum_e1 _)^).
-    change (path_universe (coproduct_alp_equiv A Empty B) @ path_universe (1 +E coproduct_lam_equiv B) = path_universe_uncurried (coproduct_rho_equiv A +E 1)).
+    change (path_universe (alpha_U_equiv A Empty B) @ path_universe (1 +E lambda_U_equiv B) = path_universe_uncurried (rho_U_equiv A +E 1)).
     refine ((path_universe_compose _ _)^ @ _).
-    change (path_universe_uncurried ((1 +E coproduct_lam_equiv B) oE coproduct_alp_equiv A Empty B) = path_universe_uncurried (coproduct_rho_equiv A +E 1)).
+    change (path_universe_uncurried ((1 +E lambda_U_equiv B) oE alpha_U_equiv A Empty B) = path_universe_uncurried (rho_U_equiv A +E 1)).
     apply ap.
-    apply coproduct_triangle_equiv.
+    apply triangle_U_equiv.
   Defined.
 
-  Lemma coproduct_hexagon_equiv
-    : forall A B C : Type, coproduct_alp_equiv B C A oE (coproduct_tau_equiv A (B + C) oE coproduct_alp_equiv A B C) =
-(1 +E coproduct_tau_equiv A C) oE (coproduct_alp_equiv B A C oE (coproduct_tau_equiv A B +E 1)).
+  Lemma hexagon_U_equiv
+    : forall A B C : Type, alpha_U_equiv B C A oE (tau_U_equiv A (B + C) oE alpha_U_equiv A B C) =
+(1 +E tau_U_equiv A C) oE (alpha_U_equiv B A C oE (tau_U_equiv A B +E 1)).
   Proof.
     intros. apply path_equiv. apply path_forall.
     intros [[a|b]|c]; constructor.
   Defined.
 
-  Lemma coproduct_hexagon
-    : forall A B C : Type, coproduct_alp A B C @ coproduct_tau A (B + C)%type @ coproduct_alp B C A = ap011 (fun X Y => (X + Y)%type) (coproduct_tau A B) (idpath C) @ coproduct_alp _ _ _ @ ap011 (fun X Y => (X + Y)%type) (idpath B) (coproduct_tau A C).
+  Lemma hexagon_U
+    : IsHexagonCoherent (fun A B => (A + B)%type) alpha_U tau_U.
   Proof.
-    intros. unfold coproduct_alp, coproduct_tau.
+    unfold IsHexagonCoherent; intros A B C. unfold alpha_U, tau_U.
     refine (_ @ whiskerR (whiskerR (ap011_path_universe_uncurried_sum_e1 _)^ _) _ @ whiskerL _ (ap011_path_universe_uncurried_sum_1e _)^).
-    change ((path_universe (coproduct_alp_equiv A B C) @ path_universe (coproduct_tau_equiv A (B + C))) @
-path_universe (coproduct_alp_equiv B C A) = (path_universe (coproduct_tau_equiv A B +E 1) @ path_universe (coproduct_alp_equiv B A C)) @ path_universe (1 +E coproduct_tau_equiv A C)).
+    change ((path_universe (alpha_U_equiv A B C) @ path_universe (tau_U_equiv A (B + C))) @
+path_universe (alpha_U_equiv B C A) = (path_universe (tau_U_equiv A B +E 1) @ path_universe (alpha_U_equiv B A C)) @ path_universe (1 +E tau_U_equiv A C)).
     refine (whiskerR (path_universe_compose _ _)^ _ @ _ @ whiskerR (path_universe_compose _ _) _).
-    change (path_universe (coproduct_tau_equiv A (B + C) oE coproduct_alp_equiv A B C) @ path_universe (coproduct_alp_equiv B C A) = path_universe (coproduct_alp_equiv B A C oE (coproduct_tau_equiv A B +E 1)) @ path_universe (1 +E coproduct_tau_equiv A C)).
+    change (path_universe (tau_U_equiv A (B + C) oE alpha_U_equiv A B C) @ path_universe (alpha_U_equiv B C A) = path_universe (alpha_U_equiv B A C oE (tau_U_equiv A B +E 1)) @ path_universe (1 +E tau_U_equiv A C)).
     refine ((path_universe_compose _ _)^ @ _ @ path_universe_compose _ _).
-    change (path_universe_uncurried (coproduct_alp_equiv B C A oE (coproduct_tau_equiv A (B + C) oE coproduct_alp_equiv A B C)) = path_universe_uncurried ((1 +E coproduct_tau_equiv A C) oE (coproduct_alp_equiv B A C oE (coproduct_tau_equiv A B +E 1)))).
+    change (path_universe_uncurried (alpha_U_equiv B C A oE (tau_U_equiv A (B + C) oE alpha_U_equiv A B C)) = path_universe_uncurried ((1 +E tau_U_equiv A C) oE (alpha_U_equiv B A C oE (tau_U_equiv A B +E 1)))).
     apply ap.
-    apply coproduct_hexagon_equiv.
+    apply hexagon_U_equiv.
   Defined.
 
-  Lemma coproduct_bigon_equiv
-    : forall A B : Type, coproduct_tau_equiv B A oE coproduct_tau_equiv A B = 1%equiv.
+  Lemma bigon_U_equiv
+    : forall A B : Type, tau_U_equiv B A oE tau_U_equiv A B = 1%equiv.
   Proof.
     intros. apply path_equiv. apply path_forall.
     intros [a|b]; constructor.
   Defined.
 
-  Lemma coproduct_bigon
-    : forall A B : Type, coproduct_tau A B @ coproduct_tau B A = idpath.
+  Lemma bigon_U
+    : IsBigonCoherent (fun A B => (A + B)%type) tau_U.
   Proof.
-    intros. unfold coproduct_tau.
-    change (path_universe (coproduct_tau_equiv A B) @ path_universe (coproduct_tau_equiv B A) = idpath).
-    refine ((path_universe_compose (coproduct_tau_equiv A B) (coproduct_tau_equiv B A))^ @ _).
+    unfold IsBigonCoherent; intros A B. unfold tau_U.
+    change (path_universe (tau_U_equiv A B) @ path_universe (tau_U_equiv B A) = idpath).
+    refine ((path_universe_compose (tau_U_equiv A B) (tau_U_equiv B A))^ @ _).
     refine (_ @ path_universe_1).
-    change (path_universe_uncurried (coproduct_tau_equiv B A oE coproduct_tau_equiv A B) = path_universe_uncurried 1%equiv).
+    change (path_universe_uncurried (tau_U_equiv B A oE tau_U_equiv A B) = path_universe_uncurried 1%equiv).
     apply ap.
-    apply coproduct_bigon_equiv.
+    apply bigon_U_equiv.
   Defined.
 
 (** Here we combine the symmetric monoidal structures **)
 
-Lemma BS_dot'_alp
+Lemma BS_dot'_e
+  : BS_dot'.
+Proof.
+  unfold BS_dot'.
+  srefine ((_, _); _). (* we need this, otherwise Coq will think Empty is in type0 and I don't know how to convince it otherwise *)
+  + exact 0.
+  + exact Empty.
+  + simpl. exact (tr 1%equiv).
+Defined.
+
+Lemma alpha_BS_dot'
   : forall a b c : BS_dot', BS_dot'_product (BS_dot'_product a b) c = BS_dot'_product a (BS_dot'_product b c).
 Proof.
   unfold BS_dot', BS, BS_dot'_product.
   intros [[nA A] tA] [[nB B] tB] [[nC C] tC].
   srapply @sigma_truncfib. srapply @path_prod'.
-  + apply nat_alp.
-  + apply coproduct_alp.
+  + apply alpha_nat.
+  + apply alpha_U.
 Defined.
 
-Lemma BS_dot'_lam
-  : forall b : BS_dot', BS_dot'_product ((0, Empty); tr 1%equiv) b = b.
+Lemma lambda_BS_dot'
+  : forall b : BS_dot', BS_dot'_product BS_dot'_e b = b.
 Proof.
   unfold BS_dot', BS, BS_dot'_product.
   intros [[nB B] tB].
   srapply @sigma_truncfib. srapply @path_prod'.
-  + apply nat_lam.
-  + apply coproduct_lam.
+  + apply lambda_nat.
+  + apply lambda_U.
 Defined.
 
-Lemma BS_dot'_rho
-  : forall a : BS_dot', BS_dot'_product a ((0, Empty); tr 1%equiv) = a.
+Lemma rho_BS_dot'
+  : forall a : BS_dot', BS_dot'_product a BS_dot'_e = a.
 Proof.
   unfold BS_dot', BS, BS_dot'_product.
   intros [[nA A] tA].
   srapply @sigma_truncfib. srapply @path_prod'.
-  + apply nat_rho.
-  + apply coproduct_rho.
+  + apply rho_nat.
+  + apply rho_U.
 Defined.
 
-Lemma BS_dot'_tau
+Lemma tau_BS_dot'
   : forall a b : BS_dot', BS_dot'_product a b = BS_dot'_product b a.
 Proof.
   unfold BS_dot', BS, BS_dot'_product.
   intros [[nA A] tA] [[nB B] tB].
   srapply @sigma_truncfib. srapply @path_prod'.
-  + apply nat_tau.
-  + apply coproduct_tau.
+  + apply tau_nat.
+  + apply tau_U.
 Defined.
 
-(** We omit three out of the four coherence diagrams from the formalization,
-as they just involve very complex path algebra. As a title of example, we
-just show the bigon. **)
-Lemma BS_dot'_pentagon
-  : IsPentagonCoherent BS_dot'_product BS_dot'_alp.
+Lemma pentagon_BS_dot'
+  : IsPentagonCoherent BS_dot'_product alpha_BS_dot'.
 Proof.
-Admitted.
+  unfold IsPentagonCoherent; intros.
+  refine (_ @ whiskerL _ (ap (fun z => ap011 BS_dot'_product z (alpha_BS_dot' b c d)) (sigma_truncfib_1 (fun X : nat * Type => merely (snd X <~> Fin (fst X))) _ (fun a0 : nat * Type => istrunc_truncation (-1) (snd a0 <~> Fin (fst a0))) idpath idpath)) @ whiskerR (whiskerR (ap (ap011 BS_dot'_product (alpha_BS_dot' a b c)) (sigma_truncfib_1 (fun X : nat * Type => merely (snd X <~> Fin (fst X))) _ (fun a0 : nat * Type => istrunc_truncation (-1) (snd a0 <~> Fin (fst a0))) idpath idpath)) _) _).
+  unfold alpha_BS_dot'.
+  refine (_ @ whiskerR (whiskerR (ap011_m_base_fiber_sigma_truncfib _ _ _ _ _ _ _ _ (path_prod' (alpha_nat (fst a.1) (fst b.1) (fst c.1)) (alpha_U (snd a.1) (snd b.1) (snd c.1))) idpath)^ _) _ @ whiskerL _ (ap011_m_base_fiber_sigma_truncfib _ _ _ _ _ _ _ _ idpath (path_prod' (alpha_nat (fst b.1) (fst c.1) (fst d.1)) (alpha_U (snd b.1) (snd c.1) (snd d.1))))^).
+  repeat rewrite sigma_truncfib_concat.
+  apply ap011.
+  + srapply @path_ishprop.
+  + set (nA := fst a.1); set (nB := fst b.1); set (nC := fst c.1); set (nD := fst d.1);
+    set (A := snd a.1); set (B := snd b.1); set (C := snd c.1); set (D := snd d.1).
+change (path_prod' (alpha_nat (nA + nB) nC nD) (alpha_U (A + B) C D) @ path_prod' (alpha_nat nA nB (nC + nD)) (alpha_U A B (C + D)) = (ap011 (fun X X0 : nat * Type => (fst X + fst X0, (snd X + snd X0)%type)) (path_prod' (alpha_nat nA nB nC) (alpha_U A B C)) 1 @ path_prod' (alpha_nat nA (nB + nC) nD) (alpha_U A (B + C) D)) @ ap011 (fun X X0 : nat * Type => (fst X + fst X0, (snd X + snd X0)%type)) 1 (path_prod' (alpha_nat nB nC nD) (alpha_U B C D))).
+  refine (_ @ whiskerR (whiskerR (ap011_path_prod' (fun n n' => (n + n')) (fun X Y => (X + Y)%type) (alpha_nat nA nB nC) (alpha_U A B C) idpath idpath)^ _) _ @ whiskerL _ (ap011_path_prod' (fun n n' => (n + n')) (fun X Y => (X + Y)%type) idpath idpath (alpha_nat nB nC nD) (alpha_U B C D))^).
+  repeat rewrite <- path_prod_pp.
+  apply ap011.
+  - apply pentagon_nat.
+  - apply pentagon_U.
+Qed.
 
-Lemma BS_dot'_triangle
-  : IsTriangleCoherent ((0, Empty); tr 1%equiv) BS_dot'_product BS_dot'_alp BS_dot'_lam BS_dot'_rho.
+Lemma triangle_BS_dot'
+  : IsTriangleCoherent BS_dot'_e BS_dot'_product alpha_BS_dot' lambda_BS_dot' rho_BS_dot'.
 Proof.
-Admitted.
+  unfold IsTriangleCoherent; intros.
+  refine (whiskerL _ (ap (fun z => ap011 BS_dot'_product z (lambda_BS_dot' b)) (sigma_truncfib_1 (fun X : nat * Type => merely (snd X <~> Fin (fst X))) _ (fun a0 : nat * Type => istrunc_truncation (-1) (snd a0 <~> Fin (fst a0))) idpath idpath))^ @ _);
+  refine (_ @ ap (ap011 BS_dot'_product (rho_BS_dot' a)) (sigma_truncfib_1 (fun X : nat * Type => merely (snd X <~> Fin (fst X))) _ (fun a0 : nat * Type => istrunc_truncation (-1) (snd a0 <~> Fin (fst a0))) idpath idpath)).
+  unfold alpha_BS_dot', lambda_BS_dot', rho_BS_dot'.
+  refine (whiskerL _ (ap011_m_base_fiber_sigma_truncfib _ _ _ _ _ _ _ _ idpath (path_prod' (lambda_nat (fst b.1)) (lambda_U (snd b.1)))) @ _ @ (ap011_m_base_fiber_sigma_truncfib _ _ _ _ _ _ _ _ (path_prod' (rho_nat (fst a.1)) (rho_U (snd a.1))) idpath)^).
+  repeat rewrite sigma_truncfib_concat.
+  apply ap011.
+  + srapply @path_ishprop.
+  + refine (whiskerL _ (ap011_path_prod' (fun n n' => (n + n')) (fun X Y => (X + Y)%type) idpath idpath (lambda_nat (fst b.1)) (lambda_U (snd b.1))) @ _ @ (ap011_path_prod' (fun n n' => (n + n')) (fun X Y => (X + Y)%type) (rho_nat (fst a.1)) (rho_U (snd a.1)) idpath idpath)^).
+    repeat rewrite <- path_prod_pp.
+    apply ap011.
+    - apply triangle_nat.
+    - apply triangle_U.
+Qed.
 
-Lemma BS_dot'_hexagon
-  : IsHexagonCoherent BS_dot'_product BS_dot'_alp BS_dot'_tau.
+Lemma hexagon_BS_dot'
+  : IsHexagonCoherent BS_dot'_product alpha_BS_dot' tau_BS_dot'.
 Proof.
-Admitted.
+  unfold IsHexagonCoherent; intros.
+  refine (_ @ whiskerR (whiskerR (ap (ap011 BS_dot'_product (tau_BS_dot' a b)) (sigma_truncfib_1 (fun X : nat * Type => merely (snd X <~> Fin (fst X))) _ (fun a0 : nat * Type => istrunc_truncation (-1) (snd a0 <~> Fin (fst a0))) idpath idpath)) _) _ @ whiskerL _ (ap (fun z => ap011 BS_dot'_product z (tau_BS_dot' a c)) (sigma_truncfib_1 (fun X : nat * Type => merely (snd X <~> Fin (fst X))) _ (fun a0 : nat * Type => istrunc_truncation (-1) (snd a0 <~> Fin (fst a0))) idpath idpath))).
+  unfold alpha_BS_dot', tau_BS_dot'.
+  refine (_ @ whiskerR (whiskerR (ap011_m_base_fiber_sigma_truncfib _ _ _ _ _ _ _ _ (path_prod' (tau_nat (fst a.1) (fst b.1)) (tau_U (snd a.1) (snd b.1))) idpath)^ _) _ @ whiskerL _ (ap011_m_base_fiber_sigma_truncfib _ _ _ _ _ _ _ _ idpath (path_prod' (tau_nat (fst a.1) (fst c.1)) (tau_U (snd a.1) (snd c.1))))^).
+  repeat rewrite sigma_truncfib_concat.
+  apply ap011.
+  + srapply @path_ishprop.
+  + refine (_ @ whiskerR (whiskerR (ap011_path_prod' (fun n n' => (n + n')) (fun X Y => (X + Y)%type) (tau_nat (fst a.1) (fst b.1)) (tau_U (snd a.1) (snd b.1)) idpath idpath)^ _) _ @ whiskerL _ (ap011_path_prod' (fun n n' => (n + n')) (fun X Y => (X + Y)%type) idpath idpath (tau_nat (fst a.1) (fst c.1)) (tau_U (snd a.1) (snd c.1)))^).
+    repeat rewrite <- path_prod_pp.
+    apply ap011.
+    - apply hexagon_nat.
+    - apply hexagon_U.
+Qed.
 
-Lemma BS_dot'_bigon
-  : IsBigonCoherent BS_dot'_product BS_dot'_tau.
+Lemma bigon_BS_dot'
+  : IsBigonCoherent BS_dot'_product tau_BS_dot'.
 Proof.
   unfold IsBigonCoherent.
   intros.
-  unfold BS_dot'_tau.
+  unfold tau_BS_dot'.
   refine (sigma_truncfib_concat (fun X : nat * Type => merely (snd X <~> Fin (fst X))) _ _ _ @ _).
   srapply @sigma_truncfib_1.
   unfold path_prod'.
   refine ((path_prod_pp _ _ _ _ _ _ _)^ @ _).
-  change (path_prod (fst a.1 + fst b.1, (snd a.1 + snd b.1)%type) (fst a.1 + fst b.1, (snd a.1 + snd b.1)%type) (nat_tau (fst a.1) (fst b.1) @ nat_tau (fst b.1) (fst a.1)) (coproduct_tau (snd a.1) (snd b.1) @ coproduct_tau (snd b.1) (snd a.1)) = path_prod (fst a.1 + fst b.1, (snd a.1 + snd b.1)%type) (fst a.1 + fst b.1, (snd a.1 + snd b.1)%type) idpath idpath).
+  change (path_prod (fst a.1 + fst b.1, (snd a.1 + snd b.1)%type) (fst a.1 + fst b.1, (snd a.1 + snd b.1)%type) (tau_nat (fst a.1) (fst b.1) @ tau_nat (fst b.1) (fst a.1)) (tau_U (snd a.1) (snd b.1) @ tau_U (snd b.1) (snd a.1)) = path_prod (fst a.1 + fst b.1, (snd a.1 + snd b.1)%type) (fst a.1 + fst b.1, (snd a.1 + snd b.1)%type) idpath idpath).
   apply ap011.
-  + apply nat_bigon.
-  + apply coproduct_bigon.
-Defined.
+  + apply bigon_nat.
+  + apply bigon_U.
+Qed.
 
-Definition BS_smgpd
+Definition BSSMG
   : SymMonoidalGroupoid
-  := Build_SymMonoidalGroupoid BS_dot' BS_dot'_trunc ((0, Empty); tr 1%equiv) BS_dot'_product BS_dot'_alp BS_dot'_lam BS_dot'_rho BS_dot'_tau BS_dot'_pentagon BS_dot'_triangle BS_dot'_hexagon BS_dot'_bigon.
+  := Build_SymMonoidalGroupoid BS_dot' BS_dot'_trunc BS_dot'_e BS_dot'_product alpha_BS_dot' lambda_BS_dot' rho_BS_dot' tau_BS_dot' pentagon_BS_dot' triangle_BS_dot' hexagon_BS_dot' bigon_BS_dot'.
 
 End BS_monoidal_structure.
