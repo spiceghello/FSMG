@@ -308,7 +308,7 @@ Definition J
   : SymMonoidalFunctor (slistSMG X) (FSMG_SMG X)
   := @Build_SymMonoidalFunctor (slistSMG X) (FSMG_SMG X) J_fun idpath J_2 J_alpha J_lambda J_rho J_tau.
 
-Lemma epsilon_homotopy_alpha (a b c : FSMG X)
+Lemma eta_homotopy_alpha (a b c : FSMG X)
   (a' : a = J_fun (K_fun a)) (b' : b = J_fun (K_fun b)) (c' : c = J_fun (K_fun c))
   : (mm (mm a' b' @ J_2 (K_fun a) (K_fun b)) c' @ J_2 (K_fun (m a b)) (K_fun c))
     @ ap (J_fun o K_fun) (alpha a b c)
@@ -323,7 +323,7 @@ Proof.
   exact (alpha_FSMG_natural a' b' c')^.
 Defined.
 
-Lemma epsilon_homotopy_lambda (b : FSMG X) (b' : b = J_fun (K_fun b))
+Lemma eta_homotopy_lambda (b : FSMG X) (b' : b = J_fun (K_fun b))
   : (mm 1 b' @ J_2 (K_fun e) (K_fun b)) @ ap (fun w : FSMG X => J_fun (K_fun w)) (lambda b)
     = ap idmap (lambda b) @ b'.
 Proof.
@@ -332,7 +332,7 @@ Proof.
   exact (lambda_FSMG_natural b')^.
 Defined.
 
-Lemma epsilon_homotopy_rho (a : FSMG X) (a' : a = J_fun (K_fun a))
+Lemma eta_homotopy_rho (a : FSMG X) (a' : a = J_fun (K_fun a))
   : (mm a' 1 @ J_2 (K_fun a) (K_fun e)) @ ap (fun w : FSMG X => J_fun (K_fun w)) (rho a)
     = ap idmap (rho a) @ a'.
 Proof.
@@ -342,7 +342,7 @@ Proof.
   exact (rho_FSMG_natural a')^.
 Defined.
 
-Lemma epsilon_homotopy_tau (a b : FSMG X)
+Lemma eta_homotopy_tau (a b : FSMG X)
   (a' : a = J_fun (K_fun a)) (b' : b = J_fun (K_fun b))
   : (mm a' b' @ J_2 (K_fun a) (K_fun b)) @ ap (fun x : FSMG X => J_fun (K_fun x)) (tau a b)
     = ap idmap (tau a b) @ (mm b' a' @ J_2 (K_fun b) (K_fun a)).
@@ -353,7 +353,7 @@ Proof.
   exact (tau_FSMG_natural a' b')^.
 Defined.
 
-Lemma epsilon_homotopy (* unit of the adjunction *)
+Lemma eta_homotopy (* unit of the adjunction *)
   : (fun a : FSMG X => a) == J o K.
 Proof.
   srapply FSMG_ind_to_paths_in_gpd; simpl.
@@ -363,21 +363,21 @@ Proof.
     change (m a b = J_fun (sapp (K_fun a) (K_fun b))).
     refine (mm IHa IHb @ _).
     apply J_2.
-  + exact epsilon_homotopy_alpha.
-  + exact epsilon_homotopy_lambda.
-  + exact epsilon_homotopy_rho.
-  + exact epsilon_homotopy_tau. (* uses J_tau, which uses all coherence diagrams! *)
+  + exact eta_homotopy_alpha.
+  + exact eta_homotopy_lambda.
+  + exact eta_homotopy_rho.
+  + exact eta_homotopy_tau. (* uses J_tau, which uses all coherence diagrams! *)
   + exact T_FSMG.
 Defined.
 
-Definition epsilon
+Definition eta
   : SymMonoidalNatIso (SymMonoidalFunctor_id _) (SymMonoidalFunctor_comp J K).
 Proof.
   srapply @Build_SymMonoidalNatIso.
-  + exact epsilon_homotopy.
+  + exact eta_homotopy.
   + constructor.
   + intros; unfold smg_f2; simpl.
-    change (idpath @ (mm (epsilon_homotopy a) (epsilon_homotopy b) @ J_2 (K_fun a) (K_fun b)) = mm (epsilon_homotopy a) (epsilon_homotopy b) @ (J_2 (K_fun a) (K_fun b) @ 1)).
+    change (idpath @ (mm (eta_homotopy a) (eta_homotopy b) @ J_2 (K_fun a) (K_fun b)) = mm (eta_homotopy a) (eta_homotopy b) @ (J_2 (K_fun a) (K_fun b) @ 1)).
     exact (concat_1p _ @ whiskerL _ (concat_p1 _)^).
 Defined.
 
@@ -394,7 +394,7 @@ Proof.
   induction p; constructor.
 Defined.
 
-  Lemma eta_homotopy_swap
+  Lemma epsilon_homotopy_swap
     : forall (x y : X) (l : slist X) (h : K (J l) = l),
       ap (cons x) (ap (cons y) h) @ ap idmap (swap x y l)
       = ap (fun w : slist X => K (J w)) (swap x y l) @ ap (cons y) (ap (cons x) h).
@@ -416,7 +416,7 @@ Defined.
     exact (sapp_blank_beta_swap x y nil (K (J l))).
   Qed.
 
-Definition eta_homotopy (* counit *)
+Definition epsilon_homotopy (* counit *)
   : forall l : slist X,
     K (J l) = l.
 Proof.
@@ -425,47 +425,47 @@ Proof.
   + intros x l h.
     change (x :: K (J l) = x :: l).
     exact (ap (cons x) h).
-  + hnf. apply eta_homotopy_swap.
+  + hnf. apply epsilon_homotopy_swap.
   + srapply T_slist.
 Defined.
 
-  Lemma eta_cons (l2 : slistSMG X)
+  Lemma epsilon_cons (l2 : slistSMG X)
     : forall (x : X) (l : slist X),
-    ap K_fun (J_2 l l2) @ eta_homotopy (l ++ l2) = ap011 sapp (eta_homotopy l) (eta_homotopy l2) ->
-    ap K_fun (J_2 (x :: l) l2) @ eta_homotopy ((x :: l) ++ l2) = ap011 sapp (eta_homotopy (x :: l)) (eta_homotopy l2).
+    ap K_fun (J_2 l l2) @ epsilon_homotopy (l ++ l2) = ap011 sapp (epsilon_homotopy l) (epsilon_homotopy l2) ->
+    ap K_fun (J_2 (x :: l) l2) @ epsilon_homotopy ((x :: l) ++ l2) = ap011 sapp (epsilon_homotopy (x :: l)) (epsilon_homotopy l2).
   Proof.
     intros x l1 h.
     refine (whiskerR (ap_pp K_fun (alpha (iota x) (J_fun l1) (J_fun l2)) (mm 1 (J_2 l1 l2))) _ @ _).
     refine (whiskerR (@concat2 _ _ _ _ (ap K_fun (alpha (iota x) (J_fun l1) (J_fun l2))) _ (ap K_fun (mm 1 (J_2 l1 l2))) (ap (cons x) (ap K (J_2 l1 l2))) (K_fun_beta_alpha _ _ _) (ap_cons_ap_K x (J_2 l1 l2)) @ concat_1p _) _ @ _).
-    change (ap (cons x) (ap K (J_2 l1 l2)) @ ap (cons x) (eta_homotopy (l1 ++ l2)) = ap011 sapp (ap (cons x) (eta_homotopy l1)) (eta_homotopy l2)).
+    change (ap (cons x) (ap K (J_2 l1 l2)) @ ap (cons x) (epsilon_homotopy (l1 ++ l2)) = ap011 sapp (ap (cons x) (epsilon_homotopy l1)) (epsilon_homotopy l2)).
     refine ((ap_pp (cons x) _ _)^ @ _ @ (ap011_sapp_ap_cons x _ _)^).
-    change (ap (cons x) (ap K_fun (J_2 l1 l2) @ eta_homotopy (l1 ++ l2)) = ap (cons x) (ap011 sapp (eta_homotopy l1) (eta_homotopy l2))).
+    change (ap (cons x) (ap K_fun (J_2 l1 l2) @ epsilon_homotopy (l1 ++ l2)) = ap (cons x) (ap011 sapp (epsilon_homotopy l1) (epsilon_homotopy l2))).
     apply ap; exact h.
   Qed.
 
-Definition eta
+Definition epsilon
   : SymMonoidalNatIso (SymMonoidalFunctor_comp K J) (SymMonoidalFunctor_id _).
 Proof.
   srapply @Build_SymMonoidalNatIso.
-  + exact eta_homotopy.
+  + exact epsilon_homotopy.
   + constructor.
   + intros l1 l2; unfold smg_f2; simpl.
     refine (whiskerR (concat_1p _) _ @ _ @ (concat_p1 _)^).
     revert l1; srapply @slist_ind_to_2paths_in_gpd; hnf.
     - srapply T_slist.
     - refine (whiskerR (K_fun_beta_lambda _) _ @ concat_1p _ @ _).
-      change (eta_homotopy l2 = ap011 sapp (idpath nil) (eta_homotopy l2)).
-      generalize (eta_homotopy l2); induction p; constructor.
-    - exact (eta_cons l2).
+      change (epsilon_homotopy l2 = ap011 sapp (idpath nil) (epsilon_homotopy l2)).
+      generalize (epsilon_homotopy l2); induction p; constructor.
+    - exact (epsilon_cons l2).
 Defined.
 
 Proposition equiv_FSMG_slist : FSMG X <~> slist X.
 Proof.
-  exact (equiv_adjointify K J eta_homotopy (fun x => (epsilon_homotopy x)^)).
+  exact (equiv_adjointify K J epsilon_homotopy (fun x => (eta_homotopy x)^)).
 Defined.
 
 Definition sym_mon_equiv_FMG_list
   : SymMonoidalEquivalence (FSMG_SMG X) (slistSMG X)
-  := (K; J; (SymMonoidalNatIso_V _ _ epsilon, eta)).
+  := (K; J; (SymMonoidalNatIso_V _ _ eta, epsilon)).
 
 End Coherence.
