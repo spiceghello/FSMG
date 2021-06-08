@@ -50,6 +50,10 @@ Proof.
   srapply @trunc_sigma; intro; apply dlT.
 Defined.
 
+Definition dlpt0_dot
+  : deloop_dot
+  := (0; dlpt0).
+
 Definition Sdli
   : deloop_dot -> deloop_dot
   := sigma_function S (@dli).
@@ -566,7 +570,7 @@ Context `{Univalence}.
 
 Definition deloop_e
   : deloop_dot
-  := (0; dlpt0).
+  := dlpt0_dot.
 
   Definition deloop_m_dli
     : (deloop_dot -> deloop_dot) -> deloop_dot -> deloop_dot.

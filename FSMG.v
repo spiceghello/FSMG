@@ -406,7 +406,7 @@ Proof.
 Defined.
 
 Definition FSMG_rec
-  : FSMG X-> A.
+  : FSMG X -> A.
 Proof.
   srapply (@FSMG_ind (fun _ => A) e' iota' (fun _ => fun _ => m')); hnf.
   + intros. exact (transport_const _ _ @ alpha' a' b' c').

@@ -702,6 +702,44 @@ Defined.
 
 End ap011_m_base_fiber.
 
+Lemma transport_path_sigma_pr1
+  {A B : Type} (C : B -> Type) (f g : A -> sig C)
+  {x y : A} (p : x = y) (q : f x = g x)
+  : (transport (fun a : A => f a = g a) p q)..1 = transport (fun a : A => (f a).1 = (g a).1) p q..1.
+Proof.
+  induction p; constructor.
+Defined.
+
+Lemma contr_sigma_prop
+  {A B} (C : B -> Type)
+  (T : forall b : B, IsHProp (C b))
+  (f : A -> sig C) (bx : B) (cx : C bx)
+  : Contr {a : A & (f a).1 = bx} -> Contr {a : A & f a = (bx; cx)}.
+Proof.
+  intros [[cent_a cent_p] cont].
+  set (cont' := fun (a : A) (p : (f a).1 = bx) => cont (a; p)).
+  transparent assert (cont_a : (forall (a : A) (p : (f a).1 = bx), cent_a = a)).
+    { exact (fun a p => (cont' a p)..1). }
+  transparent assert (cont_p : (forall (a : A) (p : (f a).1 = bx), transport (fun a : A => (f a).1 = bx) (cont' a p) ..1 cent_p = p)).
+    { exact (fun a p => (cont' a p)..2). }
+  unfold cont' in cont_a, cont_p. clear cont'.
+
+  srapply @Build_Contr.
+  + srefine (_; _).
+    - exact cent_a.
+    - simpl. srapply @sigma_truncfib. exact cent_p.
+  + intros [a p]. srapply @path_sigma'.
+    - exact (cont_a a p..1).
+    - srapply @path_sigma_truncfib.
+      refine (_ @ cont_p a p..1).
+      change (
+        (transport (fun a0 : A => f a0 = (bx; cx)) (cont_a a p..1) (sigma_truncfib C T cent_p)) ..1 =
+        transport (fun a0 : A => (f a0).1 = bx) (cont_a a p..1) cent_p
+      ).
+      refine (transport_path_sigma_pr1 _ _ _ _ _ @ _); simpl.
+      apply ap. srapply @sigma_truncfib_pr1.
+Defined.
+
 End sigma.
 
 (** About function extensionality (used for symmetric monoidality) **)

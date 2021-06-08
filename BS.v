@@ -54,7 +54,7 @@ Defined.
 
 (** BS n is connected for every n **)
 
-Lemma Conn_BS
+Lemma Connected_BS
   : forall n : nat, Contr (Trunc 0 (BS n)).
 Proof.
   intro n. srapply @Build_Contr.
@@ -70,7 +70,7 @@ Lemma forall_BS_hprop (n : nat)
   : forall b : BS n, P b -> forall x : BS n, P x.
 Proof.
   intro b.
-  exact (@conn_to_prop _ _ (Conn_BS n) P T b).
+  exact (@conn_to_prop _ _ (Connected_BS n) P T b).
 Defined.
 
 (** Paths in BS are equivalent to paths between the underlying types **)
